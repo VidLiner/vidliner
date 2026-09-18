@@ -1,0 +1,70 @@
+# VidLiner example: replace cars in a small annotated dataset.
+#
+# Run it with:
+#   python examples/car-swap/demo.py
+#
+# Every path is relative to the workspace the demo creates.
+
+recipe: car-swap
+description: replace cars with other vehicle categories, keeping the scene intact
+
+dataset:
+  input: ./data/source
+  format: coco-instance
+  splits:
+    mode: directory
+    names: [train, val, test]
+  augment_splits: [train]
+
+target:
+  classes: [car]
+  min_score: 0.10
+  min_area_px: 400
+  max_per_sample: 1
+  top_k_by: score
+
+replacement:
+  mode: strict
+  strategy: category
+  values: [sedan, suv, pickup]
+  candidates_per_object: 3
+  seed: 20240517
+
+preserve:
+  background: strict
+  geometry: true
+  lighting: true
+
+refine:
+  steps:
+    - operator: refine.mask_edges
+      config: { feather_px: 3, close_px: 5 }
+    - operator: refine.alpha_blend
+    - operator: refine.harmonize
+      config: { strength: 0.45 }
+
+quality:
+  minimum_overall: 0.55
+  hard_gates:
+    background_preservation: 0.93
+    annotation_consistency: 0.95
+  maximum_artifact_score: 0.45
+  minimum_target_presence: 0.10
+  review_band: 0.05
+
+duplicates:
+  enabled: true
+  perceptual_hash: phash
+  hamming_threshold: 6
+
+export:
+  format: coco-instance
+  path: ./data/output
+  copy_images: true
+  include_provenance: true
+
+limits:
+  workers: 4
+  per_node_timeout_s: 120
+  resume: true
+  cache: true

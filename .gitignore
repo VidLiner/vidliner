@@ -1,0 +1,36 @@
+# VidLiner workspace and build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# VidLiner runtime output
+workspace/
+runs/
+artifacts/
+cache/
+datasets/
+!examples/**/datasets/
+
+# Local runtime profiles may hold credential references
+runtime.local.yaml
+.env
+*.local.yaml
+
+# macOS
+
+# Tool caches
+.ty/
