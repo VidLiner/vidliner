@@ -1,0 +1,13 @@
+[package]
+name = "vidliner-video-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Parallel, deterministic geometry and contrast-set kernels for VidLiner"
+
+[dependencies]
+rayon = "1.11"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"

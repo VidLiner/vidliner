@@ -203,6 +203,7 @@ for a valid result.
 | a new quality metric | add it to `MetricName`, compute it in the quality stage, and reference it in a recipe gate |
 | a new refinement step | add a capability name, an operator, and a recipe step — the assembler picks it up |
 | video support | use `domain.video` for deterministic variants, label/time transforms, and contrast axes; then implement Hypit rendering, tracking, and trusted temporal verification on top |
+| high-throughput video geometry | use the optional Rust crate in `native/` for parallel pure kernels; Python remains the orchestration and policy boundary |
 | a different execution backend | implement `NodeRunner`; the engine is agnostic |
 
 ---
