@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">VidLiner — Synthetic data you can prove</title>
+  <desc id="desc">A social card for VidLiner, an object-centric synthetic data pipeline.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#101C36"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="70" y1="136" x2="284" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35D2FF"/>
+      <stop offset="1" stop-color="#4B8CFF"/>
+    </linearGradient>
+    <linearGradient id="proof" x1="156" y1="248" x2="246" y2="316" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A4FFCE"/>
+      <stop offset="1" stop-color="#57E4A7"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <path d="M1000 0h280v640H830Z" fill="#15264A" opacity=".4"/>
+  <path d="M0 548c290-98 497-13 714-95 165-63 284-172 566-197" fill="none" stroke="#223C70" stroke-width="2"/>
+  <path d="M0 582c287-98 508-7 721-90 157-61 295-189 559-196" fill="none" stroke="#1B315D" stroke-width="2"/>
+  <rect x="96" y="152" width="214" height="214" rx="53" fill="#0B1020" stroke="#28436F" stroke-width="3"/>
+  <path d="M133 202 193 314 254 202" fill="none" stroke="url(#frame)" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" filter="url(#glow)"/>
+  <path d="m173 270 17 17 34-37" fill="none" stroke="url(#proof)" stroke-linecap="round" stroke-linejoin="round" stroke-width="13"/>
+  <circle cx="257" cy="315" r="10" fill="#57E4A7"/>
+  <text x="390" y="217" fill="#A4FFCE" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" font-weight="700" letter-spacing="3">VIDLINER / IMAGE PIPELINE MVP</text>
+  <text x="390" y="300" fill="#F4F8FF" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="68" font-weight="750" letter-spacing="-2">Synthetic data</text>
+  <text x="390" y="374" fill="#35D2FF" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="68" font-weight="750" letter-spacing="-2">you can prove.</text>
+  <text x="392" y="433" fill="#B9C8E1" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="27">Generate · verify · rebuild labels · export evidence</text>
+  <g transform="translate(392 495)">
+    <rect width="154" height="42" rx="21" fill="#19345A"/>
+    <circle cx="22" cy="21" r="6" fill="#57E4A7"/>
+    <text x="39" y="27" fill="#DFFFEF" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700">ALPHA</text>
+    <text x="181" y="27" fill="#7793C2" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" letter-spacing="1.4">GITHUB OPEN SOURCE</text>
+  </g>
+</svg>

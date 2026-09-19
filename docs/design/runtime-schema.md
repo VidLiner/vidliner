@@ -28,11 +28,21 @@ backends:
       score_floor: 0.3
     capacity: { limit: 2 }
     estimates: { unit_seconds: 0.4 }
+    demo_only: true             # a saliency heuristic, not a detector
 
   local_segmenter:
-    use: vidliner.backends.opencv.segmentation:OpenCvSegmentationBackend
+    use: vidliner.backends.heuristic.segmentation:HeuristicSegmentationBackend
     options: { dilate_px: 2 }
     estimates: { unit_seconds: 0.6 }
+    demo_only: true
+
+  local_scene:
+    use: vidliner.backends.heuristic.scene:HeuristicSceneBackend
+    demo_only: true
+
+  local_planner:
+    use: vidliner.backends.heuristic.planner:RuleBasedPlannerBackend
+    demo_only: true
 
   http_replacement:
     use: vidliner.backends.http_replacement:HttpReplacementBackend
@@ -47,19 +57,18 @@ backends:
     capacity: { limit: 1, period_s: 6 }
     estimates: { unit_cost: 0.02, unit_seconds: 9, external: true }
 
-  local_vlm:
-    use: vidliner.backends.heuristic.evaluator:HeuristicEvaluatorBackend
-    options: {}
+  local_evaluator:
+    use: vidliner.backends.local.evaluator:LocalMetricEvaluatorBackend
+    demo_only: true
 
 bindings:
   vision.object_detection.v1: local_detector
   vision.instance_segmentation.v1: local_segmenter
-  vision.scene_analysis.v1: builtin_scene
-  planning.replacement.v1: builtin_planner
+  vision.scene_analysis.v1: local_scene
+  planning.replacement.v1: local_planner
   generation.object_replacement.v1: http_replacement
-  quality.semantic_match.v1: local_vlm
-  quality.background_preservation.v1: builtin_metrics
-  quality.artifact_detection.v1: local_vlm
+  quality.semantic_match.v1: local_evaluator
+  quality.artifact_detection.v1: local_evaluator
 ```
 
 ## Rules
@@ -79,6 +88,13 @@ bindings:
 6. `estimates` feed `plan`/`--dry-run` only. They never affect execution.
 7. `device` is advisory: a backend may declare a device requirement, and a profile whose `device`
    cannot satisfy it fails pre-flight with `DEVICE_UNAVAILABLE`.
+8. `demo_only` marks a backend as a stand-in. It changes no behaviour except one: when a capability
+   in `PRODUCTION_CAPABILITIES` resolves to a marked backend, the dataset may not be exported unless
+   the recipe sets `acceptance.allow_demo_backends`. A backend class may also declare the marker
+   itself, and that declaration is authoritative. The check reads the marker only — it never
+   imports, instantiates, or probes a backend, so it costs nothing at plan time.
+9. Capabilities the pipeline measures itself (`BUILTIN_CAPABILITIES`, currently
+   `quality.background_preservation.v1`) **must not** appear in `bindings`: they need no backend.
 
 ## Redaction
 

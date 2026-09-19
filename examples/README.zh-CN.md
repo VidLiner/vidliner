@@ -64,16 +64,22 @@ vidliner report  review latest --workspace $WS
 
 ### 换成真实模型
 
-recipe 一个字都不用改，只在工作区的 `runtime.yaml` 里把三项能力指向真实 backend：
+recipe 一个字都不用改，只在工作区的 `runtime.yaml` 里把四项"决定数据本身"的能力指向真实 backend：
 
 ```yaml
 backends:
-  my_detector: { use: my_project.detector:DetectorBackend, options: { model_path: /models/yolo.onnx } }
-  my_editor:   { use: my_project.editor:EditorBackend, credentials: { api_key: { source: env, name: EDIT_KEY } } }
+  my_detector:  { use: my_project.detector:DetectorBackend, options: { model_path: /models/yolo.onnx } }
+  my_segmenter: { use: my_project.segmenter:SegmenterBackend, options: { model_path: /models/sam.onnx } }
+  my_editor:    { use: my_project.editor:EditorBackend, credentials: { api_key: { source: env, name: EDIT_KEY } } }
+  my_judge:     { use: my_project.judge:SemanticJudgeBackend }
 
 bindings:
   vision.object_detection.v1: my_detector
+  vision.instance_segmentation.v1: my_segmenter
   generation.object_replacement.v1: my_editor
+  quality.semantic_match.v1: my_judge
 ```
 
-契约见 `docs/zh/backends.md`，profile 说明见 `docs/zh/runtime.md`。
+这时再把 recipe 里的 `acceptance.allow_demo_backends` 删掉：有了这些绑定，导出不再被拒绝，而那句"我知道"反而成了对数据不实的陈述。
+
+示例 recipe 之所以设置 `acceptance.allow_demo_backends: true`，是因为它跑在内置演示栈上，而流水线默认拒绝导出由演示栈产出的数据集——除非 recipe 表明自己知情。`vidliner plan` 会在生成任何东西之前打印同样的警告。契约见 `docs/zh/backends.md`，profile 说明见 `docs/zh/runtime.md`。

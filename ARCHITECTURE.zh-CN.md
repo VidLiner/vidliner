@@ -134,6 +134,8 @@ Backend 拿到的是 `PipelineContext`——job id、node id、seed、device、c
 
 **词汇表中有一项能力刻意不由 backend 提供**：`quality.background_preservation.v1` 是流水线自己做的确定性像素比较。它留在词汇表里（recipe 的门槛会引用它），但 profile 不得绑定它，`vidliner backend check` 会把它报告为 `builtin` 已满足。
 
+Backend 还可以声明 `demo_only`，随附 profile 用这个标记标出了自己的启发式、合成生成器与颜色评估器。这条标记喂给**生产防护**：检测、实例分割、对象替换、语义匹配这四项能力产出的正是最终进入数据集的数据，因此其中任何一项由占位实现提供时，job 照常运行，但**导出会被拒绝**——除非 recipe 设置 `acceptance.allow_demo_backends`。检查只读这个标记，所以在规划阶段零成本；它会跑两次：一次在生成任何东西之前的预检，一次在导出时，且后者依据存储的 manifest 而非当前 profile。参见 ADR-019。
+
 阻塞型 backend（本地模型、解码器）声明 `blocking = True`，并把同步实现放在 `self._sync`；运行时会在线程中执行它。原生异步 backend（HTTP 客户端）直接 await，并从独立的容量预算中取用。
 
 ---

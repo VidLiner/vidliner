@@ -14,6 +14,7 @@ Two properties matter more than accuracy here:
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -36,6 +37,7 @@ class HeuristicDetectorBackend(LocalBackend):
     """Find salient foreground regions and label them."""
 
     backend_id = "heuristic_detector"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_OBJECT_DETECTION,)
     determinism = Determinism.DETERMINISTIC
@@ -54,19 +56,11 @@ class HeuristicDetectorBackend(LocalBackend):
         return _DetectorSync(self).label_vocabulary()
 
     async def probe(self) -> BackendProbe:
-        """Report readiness, and warn that this detector is a baseline rather than a trained model."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
-            health=probe.health,
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
+        return replace(
+            probe,
             message="saliency detector; bind a trained detector for production accuracy",
-            details=probe.details,
         )
 
 

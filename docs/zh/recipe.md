@@ -1,5 +1,7 @@
 # Recipe（数据增强配方）
 
+[English](../recipe.md)
+
 Recipe 是一份 YAML 文档，只表达**你想要什么**。它从不指名模型、服务或凭据，也不包含任何会解析到工作区之外的路径。
 
 校验：
@@ -159,6 +161,11 @@ refine:
 | `on_quality_reject` | `keep_diagnostics` | 保留被拒证据，或 `discard`。 |
 | `export_review` | `false` | 是否把 `NEEDS_REVIEW` 也导出。 |
 | `allow_creative_in_dataset` | `false` | 是否允许 creative 替换通过验收。 |
+| `allow_demo_backends` | `false` | 当关键能力由演示 backend 提供时，是否仍允许导出。 |
+
+`allow_demo_backends` 是"演示数据集"唯一被允许存在的地方，而且必须被写下来。使用随附的 profile——显著性检测器、合成生成器、颜色启发式——流水线会把一个 job 完整跑完，然后拒绝导出，因为它的结果**长得像**训练数据，却不是训练数据。把它设为 `true` 等于说"我知道，这是用于查看的输出"，并把这个事实连同当时使用的绑定一起记进 job manifest。`vidliner plan` 不生成任何东西就能报告同样的状况。参见[编写 Backend](./backends.md#演示-backend-与生产防护)。
+
+同一次性的认可也可以用 `vidliner run --allow-demo` 或 `vidliner export --allow-demo` 表达；recipe 字段是持久的那一种。
 
 ---
 

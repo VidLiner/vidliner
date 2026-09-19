@@ -24,6 +24,7 @@ from vidliner.domain.enums import Determinism, PortType, StageName
 from vidliner.domain.instances import ObjectItem
 from vidliner.operators.base import ExecutionContext, InputSpec, Operator, OperatorSpec, OutputSpec
 from vidliner.operators.shared import annotation_from_payload
+from vidliner.pipeline.export_names import file_key
 
 __all__ = ["ExportConfig", "MaterialiseSampleOperator", "register_all"]
 
@@ -153,10 +154,13 @@ def _slice(
 
 
 def _candidate_file_key(candidate: dict[str, Any], item: ObjectItem) -> str:
-    """A filesystem-safe key that distinguishes the candidates of one sample."""
-    raw = str(candidate.get("candidate_key") or item.object_id)
-    cleaned = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in raw)
-    return cleaned or item.object_id
+    """A filesystem-safe key that distinguishes the candidates of one sample.
+
+    The convention is shared with every reader (see :mod:`vidliner.pipeline.export_names`); the
+    writer must not invent its own spelling of it.
+    """
+    raw = str(candidate.get("candidate_key") or "")
+    return file_key(raw, fallback=file_key(item.object_id, fallback="candidate"))
 
 
 def _decision_state(decision: Any, report: Any) -> str:

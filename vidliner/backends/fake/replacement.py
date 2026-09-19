@@ -19,6 +19,7 @@ dataset.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -58,6 +59,7 @@ class FakeReplacementBackend(LocalBackend):
     """Produce a deterministic synthetic replacement inside the target mask."""
 
     backend_id = "fake_replacement"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_OBJECT_REPLACEMENT,)
     determinism = Determinism.SEEDED
@@ -72,17 +74,11 @@ class FakeReplacementBackend(LocalBackend):
         return self._sync.replace(request, context)
 
     async def probe(self) -> BackendProbe:
-        """Report readiness and be explicit that this generator is synthetic."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
+        return replace(
+            probe,
             health="degraded",
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
             message="synthetic generator: produces deterministic placeholder imagery, not photoreal edits",
             details={"synthetic": True, **probe.details},
         )

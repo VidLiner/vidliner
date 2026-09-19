@@ -206,3 +206,25 @@
 * 重新检测找的是对象**原来**的类别，而不是替换类别。检测器的标签集是固定的，不包含 `sedan` 这类子类别；向它索要子类别会在替换成功时也一无所获。替换结果是否属于目标类别，是语义评估器的判断，因为那是一个关于外观的问题。
 * 该阶段需要真实的检测与分割 backend。内置启发式那一对足够跑 demo 和测试，但不足以为生产数据背书——这正是"默认 profile 仅限 demo"这条限制是必需而非装饰的原因。
 * `annotate` 在对象缺失时输出一个结构合法、标记为 `not_found` 的**空** bundle，从而让"样本不合格"不会以节点失败的形式出现在 job 的失败计数里。样本不可用不等于 job 损坏，这正是 ADR-010 划出的界线。
+
+---
+
+## ADR-019 —— 演示栈可以跑 job，但不能产出训练数据
+
+**决策。** 把过去混为一个判断的两个问题分开：
+
+* **job 可以跑吗？** —— 可以，绑定任何 backend 都行。demo、测试，以及"先看看新数据集长什么样"都依赖这一点；
+* **结果可以导出吗？** —— 只有当"其输出**成为**数据本身"的那些能力由生产级 backend 提供时，或者 recipe 明确承认这是演示时才允许。
+
+机制是 backend 上的 `demo_only` 标记（可写在 runtime profile 条目里，也可写在类上，以类为准），加上 `vidliner/capabilities/names.py` 中的 `PRODUCTION_CAPABILITIES`：`vision.object_detection.v1`、`vision.instance_segmentation.v1`、`generation.object_replacement.v1`、`quality.semantic_match.v1`。当其中任一项解析到被标记的 backend 时，`assess_production_readiness` 会报告它，`assert_production_ready` 以 `DEMO_BACKEND_NOT_ALLOWED` 拒绝。唯一的显式覆盖开关是 `AcceptanceSpec.allow_demo_backends`（默认 `false`，也暴露为 `vidliner run --allow-demo` 与 `vidliner export --allow-demo`），而 manifest 会同时记录这个开关与涉事能力。
+
+**理由。** 默认 profile 让新克隆的仓库无需下载模型、无需 API Key 就能跑通；同时它整体由占位实现构成：显著性检测器报告的是"这里有个东西"而不是类别，合成生成器画的是纯色而不是车，颜色启发式无法判断一辆 SUV 看起来像不像 SUV。它们没有一项真正测量了自己能力所声称之事。用它们产出的数据集在形态上与训练数据完全一致——同样的文件、同样的 schema、同样的溯源，而且每一道门槛都通过——因为门槛比较的是流水线自己的一堆声明。失效模式不是崩溃，而是一个"看起来很干净、其实是错的"数据集，而这恰恰是本产品存在的意义所在。
+
+**后果。**
+
+* 新工作区默认拒绝导出。`examples/car-swap/car-swap.yaml` 设置了 `acceptance.allow_demo_backends: true` 并附注释说明含义，因此示例既能跑，也依然诚实。
+* `vidliner plan` 在生成任何一个候选之前就报告 `production_ready`、涉事绑定及原因；"知道结果"的成本为零。
+* 检查读的是 `demo_only` 类属性而不是去探测，因为探测会导入并构造每个 backend，而这个防护跑在预检阶段。无法导入的 backend 交给绑定解析处理，它会以"能力未绑定"报出来——那是另一种更清楚的失败。
+* manifest 记录 `demo_backends` 与 `demo_backends_allowed`，并且 `export_job` 依据 manifest 而非当前 profile 决策。运行之后再改 profile，无法追溯性地把那次运行变成生产级。
+* 只有这四项决定数据本身的能力计数。演示级 planner、refiner、scene analyser、artifact evaluator、embedder 改变的是样本**怎么做出来的**，而不是它的标签是否描述了画面；把它们也算进去会让防护无法使用，而且是虚假的精确。
+* 不存在把占位实现"升级"为生产级的开关。要满足防护，唯一的办法是绑定一个声明了该能力、并且真的做事的适配器。

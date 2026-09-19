@@ -176,6 +176,18 @@ not appear in both `hard_gates` and `warn_gates`. See `docs/quality.md` for what
 | `on_quality_reject` | `keep_diagnostics` | Keep rejected evidence, or `discard` it. |
 | `export_review` | `false` | Include `NEEDS_REVIEW` candidates in the exported dataset. |
 | `allow_creative_in_dataset` | `false` | Permit creative replacements to be accepted. |
+| `allow_demo_backends` | `false` | Permit export when a production-critical capability is served by a demonstration backend. |
+
+`allow_demo_backends` is the one place a demonstration dataset is allowed to exist, and it has to be
+written down. With the shipped profile — a saliency detector, a synthetic generator, and a colour
+heuristic — the pipeline will run a job end to end and then refuse to export it, because the result
+is shaped like training data and is not training data. Setting this to `true` says *I know, this is
+inspection output*, and records that fact in the job manifest next to the bindings that were used.
+`vidliner plan` reports the same condition without generating anything. See
+[Writing a backend](./backends.md#demonstration-backends-and-the-production-guard).
+
+The same acknowledgement can be made for a single command with `vidliner run --allow-demo` or
+`vidliner export --allow-demo`; the recipe field is the durable form.
 
 ---
 

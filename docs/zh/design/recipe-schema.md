@@ -82,6 +82,7 @@ acceptance:
   on_quality_reject: keep_diagnostics   # keep_diagnostics | discard
   export_review: false                  # 是否把 NEEDS_REVIEW 也导出
   allow_creative_in_dataset: false      # creative 默认不进入正式数据
+  allow_demo_backends: false            # 关键能力为占位实现时是否仍允许导出
 
 duplicates:
   enabled: true
@@ -124,6 +125,7 @@ estimates:                        # 可选，供 plan --dry-run 使用的用户�
 6. `mode: creative` 要求 `acceptance.allow_creative_in_dataset` 显式为 `true`，并在 manifest 中记为数据完整性警示。
 7. 任何 `refine.steps[].operator` 都必须是已注册的 operator 名；未知名称在**加载 recipe 时**失败，而不是运行中途。
 8. 数值做区间校验（分数 `0..1`，像素数 `>0`）。
+9. `allow_demo_backends` 是"绑定中含演示占位实现"的 job 唯一能被导出的途径。否则会在预检与导出两次以 `DEMO_BACKEND_NOT_ALLOWED` 拒绝，manifest 会同时记录该开关与涉事能力。详见 `docs/zh/backends.md`。
 
 ## 哈希
 

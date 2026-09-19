@@ -43,6 +43,7 @@ backends:
     options: { score_floor: 0.30 }
     capacity: { limit: 2 }
     estimates: { unit_seconds: 0.4 }
+    demo_only: false              # true for a stand-in; see "Demonstration backends" below
 
   http_replacement:
     use: vidliner.backends.http_replacement:HttpReplacementBackend
@@ -72,6 +73,35 @@ one capability protocol.
 A backend may declare its capabilities as a class attribute (`declared_capabilities`) or through the
 spec's `options.declared_capabilities`. Declaring them means `vidliner plan` can resolve bindings
 **without importing the backend module**, which is what keeps planning fast and dependency-free.
+
+---
+
+## Demonstration backends
+
+`demo_only: true` marks a backend as a **stand-in**: something that drives the pipeline without
+measuring what its capability claims to measure. The shipped local profile marks all of its
+perception, generation, and evaluation backends this way, and those classes declare it themselves as
+well — a class-level `demo_only = True` is caught even when the profile entry forgets it.
+
+The marker has one consequence. Four capabilities — detection, instance segmentation, object
+replacement, and semantic matching — produce the data that ends up in the dataset, and if any of them
+is served by a demonstration backend the job runs and the export is refused with
+`DEMO_BACKEND_NOT_ALLOWED`. A recipe may override that with `acceptance.allow_demo_backends: true`,
+which is recorded in the manifest so the resulting dataset can be audited. Every other capability may
+be a stand-in without blocking: a demonstration planner or refiner changes how a sample was made, not
+whether its label describes the picture.
+
+`vidliner plan` reports the condition before anything is generated:
+
+```bash
+vidliner plan recipe.yaml
+# DEMONSTRATION stack: the export would be refused
+#   vision.object_detection.v1                   -> builtin_detector (demonstration stand-in)
+#   ...
+```
+
+See [Writing a backend](./backends.md#demonstration-backends-and-the-production-guard) for the full
+rule, and `PRODUCTION_CAPABILITIES` in `vidliner/capabilities/names.py` for the list itself.
 
 ---
 
@@ -168,7 +198,7 @@ retrying the same request is safe. The engine uses both:
 
 ## Replacing the built-in backends
 
-The fastest path to production accuracy is to keep the pipeline and swap three capabilities:
+The fastest path to production accuracy is to keep the pipeline and swap four capabilities:
 
 ```yaml
 backends:
@@ -182,11 +212,14 @@ backends:
   my_editor:
     use: my_project.editor:EditorBackend
     credentials: { api_key: { source: env, name: EDIT_KEY } }
+  my_judge:
+    use: my_project.judge:SemanticJudgeBackend
 
 bindings:
   vision.object_detection.v1: my_detector
   vision.instance_segmentation.v1: my_segmenter
   generation.object_replacement.v1: my_editor
+  quality.semantic_match.v1: my_judge
 ```
 
-Nothing else changes. See `docs/backends.md` for the contracts.
+Nothing else changes, and the export stops being refused. See `docs/backends.md` for the contracts.

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" role="img" aria-labelledby="title desc">
+  <title id="title">VidLiner mark</title>
+  <desc id="desc">A cyan V and a green verification line inside a dark rounded square.</desc>
+  <defs>
+    <linearGradient id="frame" x1="18" y1="14" x2="94" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35D2FF"/>
+      <stop offset="1" stop-color="#4B8CFF"/>
+    </linearGradient>
+    <linearGradient id="proof" x1="42" y1="52" x2="78" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A4FFCE"/>
+      <stop offset="1" stop-color="#57E4A7"/>
+    </linearGradient>
+  </defs>
+  <rect width="112" height="112" rx="27" fill="#0B1020"/>
+  <path d="M25 26.5 55.8 84 87 26.5" fill="none" stroke="url(#frame)" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"/>
+  <path d="m45 61 8.5 8.5L70 51" fill="none" stroke="url(#proof)" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <circle cx="88" cy="84" r="5" fill="#57E4A7"/>
+</svg>

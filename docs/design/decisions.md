@@ -262,6 +262,26 @@ identity being stable under unrelated edits.
 
 ---
 
+## ADR-017 — A capability the pipeline measures itself never gets a binding
+
+**Decision.** `quality.background_preservation.v1` is measured by the pipeline in
+`vidliner/quality/metrics.py` and registered in `BUILTIN_CAPABILITIES`. It stays in the capability
+vocabulary — recipes reference it in acceptance gates and the dataset report is keyed by it — but a
+runtime profile **must not** bind it, and `vidliner backend check` reports it as satisfied by
+`builtin`. A test asserts that every binding in a profile points at a backend that actually declares
+the capability.
+
+**Rationale.** It was originally bound to `builtin_metrics`, which never advertised it, so pre-flight
+reported a healthy profile as having an uncovered capability. Capabilities declared by hand as
+metadata and capabilities genuinely provided by an adapter were mixed together, which made both sides
+of that report untrustworthy.
+
+**Consequences.** The vocabulary distinguishes "provided by an adapter" from "measured in-house";
+`backend check` counts only the former in coverage; a new in-house measurement must be registered in
+`BUILTIN_CAPABILITIES`.
+
+---
+
 ## ADR-018 — The pipeline is closed by re-detecting the object in the generated image
 
 **Decision.** A `verify.redetect` stage runs between refinement and evaluation. It detects the object
@@ -295,3 +315,52 @@ between a verified dataset and a plausible-looking one.
   `not_found`, so a rejection does not surface as a node failure in the job's failure counters. A
   job is not broken because a generated sample is unusable; that is exactly the distinction ADR-010
   draws.
+
+---
+
+## ADR-019 — A demonstration stack may run a job, but it may not produce training data
+
+**Decision.** Two questions that were previously one verdict are separated:
+
+* **may the job run?** — yes, with any bound backend, because the demo, the tests, and a first look
+  at a new dataset all depend on it;
+* **may the result be exported?** — only when the capabilities whose output *becomes* the data are
+  served by production backends, or when the recipe explicitly acknowledges the demonstration.
+
+The mechanism is a `demo_only` marker on the backend (in the runtime profile entry and on the class,
+where the class is authoritative) plus `PRODUCTION_CAPABILITIES` in `vidliner/capabilities/names.py`:
+`vision.object_detection.v1`, `vision.instance_segmentation.v1`,
+`generation.object_replacement.v1`, and `quality.semantic_match.v1`. When one of those resolves to a
+marked backend, `assess_production_readiness` reports it and `assert_production_ready` refuses with
+`DEMO_BACKEND_NOT_ALLOWED`. `AcceptanceSpec.allow_demo_backends` (default `false`, exposed as
+`vidliner run --allow-demo` and `vidliner export --allow-demo`) is the single explicit override, and
+the manifest records both the flag and the offending capabilities.
+
+**Rationale.** The default profile is what makes the project runnable on a fresh checkout with no
+model download and no API key. It is also composed entirely of stand-ins: a saliency detector reports
+"something is here" rather than a class, a synthetic generator paints a flat colour rather than a
+car, and a colour heuristic cannot judge whether an SUV looks like an SUV. None of them measures what
+its capability claims to measure. A dataset built on them is shaped exactly like training data —
+same files, same schema, same provenance, every gate passing — because the gates compare the
+pipeline's claims with each other. The failure mode is not a crash; it is a clean-looking, wrong
+dataset, which is the one outcome the product exists to prevent.
+
+**Consequences.**
+
+* A fresh workspace refuses to export by default. `examples/car-swap/car-swap.yaml` sets
+  `acceptance.allow_demo_backends: true` with a comment saying what that means, so the example stays
+  runnable and stays honest.
+* `vidliner plan` reports `production_ready`, the offending bindings, and why, before a single
+  candidate is generated; the cost of finding out is zero.
+* The check reads the `demo_only` class attribute rather than probing, because probing would import
+  and construct every backend and the guard runs in pre-flight. A backend that cannot be imported is
+  left to binding resolution, which reports it as an unmet capability — a different and clearer
+  failure.
+* The manifest records `demo_backends` and `demo_backends_allowed`, and `export_job` decides from the
+  manifest rather than from the current profile. Editing a profile after a run cannot retroactively
+  make that run production-grade.
+* Only the four data-defining capabilities count. A demonstration planner, refiner, scene analyser,
+  artifact evaluator, or embedder changes *how* a sample was made, not whether its label describes
+  the picture; refusing those would make the guard unusable and would be false precision.
+* There is no flag that *promotes* a stand-in to production. The only way to satisfy the guard is to
+  bind an adapter that declares the capability and does the work.

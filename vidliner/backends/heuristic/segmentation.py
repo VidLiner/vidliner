@@ -11,6 +11,7 @@ without loading pixels again.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -43,6 +44,7 @@ class HeuristicSegmentationBackend(LocalBackend):
     """Grow a mask from a prompt using colour similarity and edge awareness."""
 
     backend_id = "heuristic_segmenter"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_INSTANCE_SEGMENTATION,)
     determinism = Determinism.DETERMINISTIC
@@ -57,19 +59,11 @@ class HeuristicSegmentationBackend(LocalBackend):
         return self._sync.segment(request, context)
 
     async def probe(self) -> BackendProbe:
-        """Report readiness, noting that text prompts are unsupported by this backend."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
-            health=probe.health,
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
+        return replace(
+            probe,
             message="box/point prompt segmenter; text prompts require a different backend",
-            details=probe.details,
         )
 
 

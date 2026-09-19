@@ -75,6 +75,7 @@ class ReasonCode(StrEnum):
     REVIEW_BORDERLINE = "REVIEW_BORDERLINE"
 
     # --- dataset integrity ----------------------------------------------------
+    DEMO_BACKEND_NOT_ALLOWED = "DEMO_BACKEND_NOT_ALLOWED"
     DUPLICATE_NEAR = "DUPLICATE_NEAR"
     DUPLICATE_EXACT = "DUPLICATE_EXACT"
     SPLIT_LEAKAGE = "SPLIT_LEAKAGE"
@@ -156,6 +157,10 @@ REASON_CATALOG: Final[dict[ReasonCode, tuple[ReasonCategory, str]]] = {
     ReasonCode.REVIEW_BORDERLINE: (
         ReasonCategory.QUALITY,
         "candidate is within the review band of a hard gate",
+    ),
+    ReasonCode.DEMO_BACKEND_NOT_ALLOWED: (
+        ReasonCategory.DATA,
+        "the dataset would be produced with demonstration backends",
     ),
     ReasonCode.DUPLICATE_NEAR: (ReasonCategory.DATA, "candidate is a near-duplicate of another sample"),
     ReasonCode.DUPLICATE_EXACT: (ReasonCategory.DATA, "candidate is an exact duplicate of another sample"),

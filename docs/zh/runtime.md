@@ -1,5 +1,7 @@
 # Runtime Profile（运行时配置）
 
+[English](../runtime.md)
+
 Recipe 说**要什么**，runtime profile 说**这台机器上谁来干**。正是这一分离，让同一份 recipe 今天跑内置启发式、明天跑本地模型、下周跑云端服务，而无需改动 recipe。
 
 ---
@@ -38,6 +40,7 @@ backends:
     options: { score_floor: 0.30 }
     capacity: { limit: 2 }
     estimates: { unit_seconds: 0.4 }
+    demo_only: false              # 占位实现写 true；见下文"演示 backend"
 
   http_replacement:
     use: vidliner.backends.http_replacement:HttpReplacementBackend
@@ -63,6 +66,25 @@ bindings:
 导入路径，形式为 `package.module:ClassName` 或 `package.module.ClassName`。该类必须暴露 `backend_id`、`backend_version`、`capabilities`、`probe()`，并至少实现一个能力协议。
 
 Backend 可以用类属性 `declared_capabilities` 声明能力，也可以写在 spec 的 `options.declared_capabilities` 里。声明的好处是：`vidliner plan` 能在**不导入 backend 模块**的前提下解析绑定——这正是规划阶段又快又无依赖的原因。
+
+---
+
+## 演示 backend
+
+`demo_only: true` 把一个 backend 标记为**占位实现**：它能驱动整条流水线，却没有真正测量其能力所声称之事。随附的本地 profile 把它所有的感知、生成与评估 backend 都标成了这样，而这些类自己也会声明——类属性 `demo_only = True` 即使被 profile 条目漏掉，也依然会被捕获。
+
+这条标记只有一个后果。有四项能力——检测、实例分割、对象替换、语义匹配——产出的是最终进入数据集的数据；其中任何一项由演示 backend 提供，job 照常运行，但导出会被拒绝，错误码为 `DEMO_BACKEND_NOT_ALLOWED`。recipe 可以用 `acceptance.allow_demo_backends: true` 覆盖它，而这个事实会被记进 manifest，因此产出的数据集事后仍可审计。其余能力出现占位实现不会阻塞导出：演示级 planner 或 refiner 改变的是样本怎么做出来的，而不是它的标签是否描述了画面。
+
+`vidliner plan` 会在生成任何东西之前报告该状况：
+
+```bash
+vidliner plan recipe.yaml
+# DEMONSTRATION stack: the export would be refused
+#   vision.object_detection.v1                   -> builtin_detector (demonstration stand-in)
+#   ...
+```
+
+完整规则见[编写 Backend](./backends.md#演示-backend-与生产防护)，能力清单本身在 `vidliner/capabilities/names.py` 的 `PRODUCTION_CAPABILITIES`。
 
 ---
 
@@ -143,7 +165,7 @@ Backend 要声明自身的可复现程度（`deterministic`、`seeded`、`nondet
 
 ## 替换内置 backend
 
-要拿到生产级精度，最快的路径是保留流水线、只换三项能力：
+要拿到生产级精度，最快的路径是保留流水线、只换四项能力：
 
 ```yaml
 backends:
@@ -157,11 +179,14 @@ backends:
   my_editor:
     use: my_project.editor:EditorBackend
     credentials: { api_key: { source: env, name: EDIT_KEY } }
+  my_judge:
+    use: my_project.judge:SemanticJudgeBackend
 
 bindings:
   vision.object_detection.v1: my_detector
   vision.instance_segmentation.v1: my_segmenter
   generation.object_replacement.v1: my_editor
+  quality.semantic_match.v1: my_judge
 ```
 
-其余一切不变。契约见 `docs/zh/backends.md`。
+其余一切不变，导出也不再被拒绝。契约见 `docs/zh/backends.md`。

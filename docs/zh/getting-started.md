@@ -1,5 +1,7 @@
 # 快速上手
 
+[English](../getting-started.md)
+
 这份走查大约五分钟，不需要下载模型、不需要 API Key、不需要联网。最终你会得到一个带标注、带溯源、带质量报告的数据集。
 
 ---
@@ -37,7 +39,7 @@ playground/
   datasets/        默认导出位置
 ```
 
-起始 profile 把每项能力都绑到内置本地 backend，因此流水线立刻可跑。用
+起始 profile 把每项能力都绑到内置本地 backend，因此流水线立刻可跑。这些 backend 是**演示占位实现**，流水线在放行导出之前会主动说明这一点——第 5 步可以看到它的样子。用
 `vidliner backend check --workspace ./playground` 查看绑定情况。
 
 ## 3. 准备数据
@@ -106,6 +108,19 @@ estimate   6.30s, cost n/a
 ```
 
 规划只解析绑定并统计节点，**不会调用任何生成 backend**——这就是它可以在你还没做任何决定前安全运行的原因。
+
+它还会告诉你这套栈是什么：
+
+```
+DEMONSTRATION stack: the export would be refused
+  vision.object_detection.v1                   -> builtin_detector (demonstration stand-in)
+  vision.instance_segmentation.v1              -> builtin_segmenter (demonstration stand-in)
+  generation.object_replacement.v1             -> builtin_replacement (demonstration stand-in)
+  quality.semantic_match.v1                    -> builtin_metrics (demonstration stand-in)
+  bind production backends for these capabilities, or set acceptance.allow_demo_backends: true to say you know
+```
+
+这四项能力产出的正是最终进入数据集的数据，而它们全部由占位实现提供：显著性启发式、合成生成器、颜色启发式。job 会照常运行——任何一次克隆都能把流水线端到端跑通——但它的结果"长得像"训练数据却不是训练数据，因此除非你明确表态，导出会被拒绝。recipe 用 `acceptance.allow_demo_backends: true` 表态，`examples/car-swap/car-swap.yaml` 就是这么写的，本文后续步骤也基于它。详见[编写 Backend](./backends.md#演示-backend-与生产防护)。
 
 `plan` 同时写出 `runs/<job>/plan.json`：完整图、每个节点的 lineage 与配置、以及估算。`vidliner run --dry-run` 产出同样的文档后停止。
 

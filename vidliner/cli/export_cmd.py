@@ -9,6 +9,7 @@ import typer
 from vidliner.cli.common import Output, fail, resolve_workspace
 from vidliner.core.errors import ValidationFailure
 from vidliner.domain.annotations import ANNOTATION_FORMATS
+from vidliner.domain.recipe import Recipe
 from vidliner.pipeline.service import Session
 
 __all__ = ["export_command"]
@@ -25,6 +26,11 @@ def export_command(
     include_review: bool = typer.Option(
         False, "--include-review", help="Also export NEEDS_REVIEW candidates."
     ),
+    allow_demo: bool = typer.Option(
+        False,
+        "--allow-demo",
+        help="Export even though the job ran on demonstration backends (inspection data only).",
+    ),
     quiet: bool = typer.Option(False, "--quiet"),
     json_mode: bool = typer.Option(False, "--json"),
 ) -> None:
@@ -35,6 +41,17 @@ def export_command(
         manifest = session.state.latest_job() if job_id == "latest" else session.state.require_job(job_id)
         if manifest is None:
             raise ValidationFailure("no job has been run in this workspace yet")
+        if allow_demo:
+            recipe_snapshot = Recipe.model_validate(manifest.recipe_snapshot)
+            recipe_snapshot = recipe_snapshot.model_copy(
+                update={
+                    "acceptance": recipe_snapshot.acceptance.model_copy(update={"allow_demo_backends": True})
+                }
+            )
+            session.state.transition_job(
+                manifest.job_id, manifest.state, recipe_snapshot=recipe_snapshot.snapshot()
+            )
+            manifest = session.state.require_job(manifest.job_id)
         outcome = session.export_job(
             manifest.job_id,
             include_review=include_review,

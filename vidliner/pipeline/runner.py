@@ -23,6 +23,7 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 
+from vidliner.capabilities.names import PRODUCTION_CAPABILITIES
 from vidliner.control.duplicates import DuplicateIndex
 from vidliner.core.errors import (
     Cancellation,
@@ -43,10 +44,12 @@ from vidliner.operators.base import SampleContext
 from vidliner.operators.registry import describe_operator
 from vidliner.pipeline.backends import CapabilityBroker
 from vidliner.pipeline.executor import ArtifactExecutor, PortState, seed_for_node
+from vidliner.pipeline.export_names import kinds_for
 from vidliner.pipeline.planner import CompiledPlan
 from vidliner.pipeline.policy import decide_candidate, policy_from_recipe
 from vidliner.runtime.engine import EngineOptions, ExecutionReport, OperationEngine
 from vidliner.runtime.logs import EventLog
+from vidliner.runtime.production import ProductionVerdict
 from vidliner.runtime.registry import BackendRegistry
 from vidliner.storage.state import EvidenceRecorder, StateStore
 from vidliner.storage.workspace import ArtifactStore, Workspace
@@ -114,6 +117,7 @@ class JobRunner:
         sample_contexts: dict[str, SampleContext],
         options: JobOptions | None = None,
         manifest: JobManifest | None = None,
+        demo_verdict: ProductionVerdict | None = None,
     ) -> None:
         self._recipe = recipe
         self._plan = plan
@@ -136,6 +140,7 @@ class JobRunner:
             existing=state.perceptual_hashes(),
         )
         self._policy = policy_from_recipe(recipe)
+        self._demo_verdict = demo_verdict or ProductionVerdict(considered=PRODUCTION_CAPABILITIES)
         self._report: ExecutionReport | None = None
         self._manifest = manifest or self._build_manifest()
         self._engine: OperationEngine | None = None
@@ -482,7 +487,11 @@ class JobRunner:
             if prefix == "candidate":
                 candidate_key = value
         sample_dir = self._workspace_ref.sample_dir(self._manifest.job_id, sample.sample_id)
-        for candidate_file in sorted(sample_dir.glob("candidate-*.json")):
+        keyed = [sample_dir / f"candidate-{stem}.json" for stem in kinds_for(candidate_key or "")]
+        candidates_on_disk = [path for path in keyed if path.is_file()]
+        if not candidates_on_disk:
+            candidates_on_disk = sorted(sample_dir.glob("candidate-*.json"))
+        for candidate_file in candidates_on_disk:
             try:
                 payload = json.loads(candidate_file.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
@@ -671,6 +680,8 @@ class JobRunner:
             capability_bindings=self._plan.resolution.as_mapping(),
             seed_tree={sample: tree.for_sample(sample).seed for sample in self._sample_contexts},
             node_count=self._plan.job_plan.node_count,
+            demo_backends=self._demo_verdict.capabilities_involved,
+            demo_backends_allowed=self._recipe.acceptance.allow_demo_backends,
         )
 
     def _transition(self, state: JobState) -> JobManifest:

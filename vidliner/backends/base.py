@@ -54,6 +54,14 @@ class LocalBackend:
     external: bool = False
     blocking: bool = True
     device: str = "cpu"
+    demo_only: bool = False
+    """Whether this backend is a demonstration stand-in rather than a production implementation.
+
+    Declared on the class *and* in the runtime profile, deliberately: the class states the truth about
+    the implementation, and the profile entry lets a deployment record which binding it selected. The
+    production guard treats either declaration as authoritative, so a backend cannot be promoted to
+    production by editing only one of them.
+    """
 
     def __init__(self, spec: BackendSpec, options: dict[str, Any], credentials: object | None = None) -> None:
         self.spec = spec
@@ -100,6 +108,7 @@ class LocalBackend:
             determinism=self.determinism,
             safe_to_retry=self.safe_to_retry,
             external=self.external,
+            demo_only=self.demo_only,
             message="local built-in backend",
             details={"adapter": type(self).__name__},
         )

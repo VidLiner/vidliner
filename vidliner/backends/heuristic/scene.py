@@ -9,6 +9,7 @@ instead of confidently wrong.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -29,6 +30,7 @@ class HeuristicSceneBackend(LocalBackend):
     """Measure orientation, lighting, scale, ground contact, shadow, and occlusion."""
 
     backend_id = "heuristic_scene"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_SCENE_ANALYSIS,)
     determinism = Determinism.DETERMINISTIC
@@ -43,19 +45,11 @@ class HeuristicSceneBackend(LocalBackend):
         return self._sync.analyse(request, context)
 
     async def probe(self) -> BackendProbe:
-        """Report readiness."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
-            health=probe.health,
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
+        return replace(
+            probe,
             message="moment- and gradient-based scene measurements",
-            details=probe.details,
         )
 
 

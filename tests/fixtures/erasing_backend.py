@@ -35,6 +35,10 @@ class ErasingReplacementBackend(LocalBackend):
 
     backend_id = "erasing_replacement"
     backend_version = "1.0.0"
+    # A test double is the definition of a demonstration stand-in: it produces a plausible picture
+    # with no object where the label says there is one. Declaring that means the production guard
+    # refuses to export a dataset built on it unless the recipe says, explicitly, that it knows.
+    demo_only = True
     capabilities = (CAP_OBJECT_REPLACEMENT,)
     determinism = Determinism.DETERMINISTIC
     safe_to_retry = True

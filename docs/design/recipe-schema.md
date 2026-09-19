@@ -81,6 +81,7 @@ acceptance:
   on_quality_reject: keep_diagnostics   # keep_diagnostics | discard
   export_review: false                  # include NEEDS_REVIEW in the dataset output
   allow_creative_in_dataset: false      # creative mode never enters accepted data by default
+  allow_demo_backends: false            # permit export when a critical capability is a stand-in
 
 duplicates:
   enabled: true
@@ -128,6 +129,10 @@ estimates:                        # optional user-supplied overrides for plan --
 7. Any `refine.steps[].operator` must be a registered operator name; unknown names fail validation
    at recipe-load time, not at run time.
 8. Numbers are range-checked (`0..1` for scores, `>0` for pixel counts).
+9. `allow_demo_backends` is the only way a job whose bindings include a demonstration stand-in may
+   be exported. It is refused otherwise with `DEMO_BACKEND_NOT_ALLOWED`, in pre-flight and again at
+   export, and the manifest records both the flag and the offending capabilities. See
+   `docs/backends.md`.
 
 ## Hashing
 

@@ -242,13 +242,21 @@ class QualitySpec(BaseModel):
 
 
 class AcceptanceSpec(BaseModel):
-    """What to do with candidates that are not clearly accepted."""
+    """What to do with candidates that are not clearly accepted, and what may enter a dataset."""
 
     model_config = ConfigDict(extra="forbid")
 
     on_quality_reject: str = "keep_diagnostics"
     export_review: bool = False
     allow_creative_in_dataset: bool = False
+    allow_demo_backends: bool = False
+    """Export a dataset built on demonstration backends anyway.
+
+    The default profile's detector, segmenter, generator, and semantic evaluator are stand-ins. They
+    exercise every stage, which is what makes the demo and the test suite possible, and they must not
+    quietly produce something that looks like training data. Setting this to true is an explicit
+    statement that the output is for inspection, not for training — and the manifest records it.
+    """
 
     @model_validator(mode="after")
     def _check_on_reject(self) -> Self:

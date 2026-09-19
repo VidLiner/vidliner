@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-labelledby="title desc">
+  <title id="title">VidLiner</title>
+  <desc id="desc">VidLiner light logo with the tagline Synthetic data you can prove.</desc>
+  <defs>
+    <linearGradient id="frame" x1="18" y1="14" x2="94" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35D2FF"/>
+      <stop offset="1" stop-color="#4B8CFF"/>
+    </linearGradient>
+    <linearGradient id="proof" x1="42" y1="52" x2="78" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A4FFCE"/>
+      <stop offset="1" stop-color="#57E4A7"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="24" width="112" height="112" rx="27" fill="#111A30" stroke="#24324F" stroke-width="2"/>
+  <path d="M33 50.5 63.8 108 95 50.5" fill="none" stroke="url(#frame)" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"/>
+  <path d="m53 85 8.5 8.5L78 75" fill="none" stroke="url(#proof)" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <circle cx="96" cy="108" r="5" fill="#57E4A7"/>
+  <text x="148" y="86" fill="#F4F8FF" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="58" font-weight="750" letter-spacing="-2">VidLiner</text>
+  <text x="151" y="117" fill="#A8B7D0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="700" letter-spacing="2.1">SYNTHETIC DATA YOU CAN PROVE</text>
+</svg>

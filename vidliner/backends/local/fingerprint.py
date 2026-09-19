@@ -10,6 +10,7 @@ instead and the duplicate stage keeps working, because it only ever calls
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -28,6 +29,7 @@ class PerceptualHashBackend(LocalBackend):
     """Expose perceptual hashing through the embedding protocol."""
 
     backend_id = "perceptual_hash"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_QUALITY_EMBEDDING,)
     determinism = Determinism.DETERMINISTIC
@@ -42,17 +44,10 @@ class PerceptualHashBackend(LocalBackend):
         return self._sync.embed(request, context)
 
     async def probe(self) -> BackendProbe:
-        """Report readiness."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
-            health=probe.health,
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
+        return replace(
+            probe,
             message="64-bit perceptual hash exposed as an embedding",
             details={"algorithm": "phash", **probe.details},
         )

@@ -22,7 +22,9 @@ CREATE TABLE jobs (
     dataset_input     TEXT NOT NULL DEFAULT '',
     output_path       TEXT NOT NULL DEFAULT '',
     node_count        INTEGER NOT NULL DEFAULT 0,
-    manifest          TEXT NOT NULL,
+    manifest          TEXT NOT NULL,              -- 完整 JobManifest JSON：审计记录
+                                                  --   含 demo_backends、seed_tree、
+                                                  --   capability_bindings、reason 直方图
     counters          TEXT NOT NULL DEFAULT '{}', -- processed/accepted/rejected/review/failed
     created_at        TEXT NOT NULL,
     updated_at        TEXT NOT NULL,
@@ -178,6 +180,10 @@ CREATE TABLE job_reports (
     PRIMARY KEY (job_id, report_name)
 );
 ```
+
+## manifest 是审计记录
+
+`jobs.manifest` 存的是完整的 `JobManifest` 而不是摘要，因为有些判断在运行结束很久之后仍必须可复现：每项能力由哪个 backend 提供、哪些绑定是演示占位实现、种子树、reason code 直方图，以及 job 最终停在什么状态。其中**导出防护**是最吃重的一处——它依据存储的 manifest 判断数据集能否写出，因此在运行之后修改 `runtime.yaml` 无法追溯性地把那次运行变成生产级。参见 ADR-019。
 
 ## 访问层
 

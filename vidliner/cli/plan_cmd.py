@@ -13,6 +13,7 @@ import typer
 from vidliner.cli.common import Output, fail, resolve_workspace
 from vidliner.core.errors import ValidationFailure
 from vidliner.pipeline.service import Session, load_recipe
+from vidliner.runtime.production import assess_production_readiness
 
 __all__ = ["plan_command"]
 
@@ -42,6 +43,10 @@ def plan_command(
         raise typer.Exit(code=fail(exc, output=output)) from exc
 
     estimate = plan.job_plan.estimate
+    # Planning is where a demonstration stack should be visible: the bindings are already resolved,
+    # nothing has been generated yet, and the answer costs no import. Printing it here means an
+    # operator learns the dataset would not be training data before paying for candidates.
+    verdict = assess_production_readiness(session.registry, plan.resolution.as_mapping())
     payload = {
         "job_id": plan.job_plan.job_id,
         "recipe_hash": plan.job_plan.recipe_hash,
@@ -50,6 +55,9 @@ def plan_command(
         "nodes": plan.job_plan.node_count,
         "capability_bindings": plan.job_plan.capability_bindings,
         "unmet_capabilities": list(plan.resolution.unmet),
+        "production_ready": verdict.is_production_ready,
+        "demo_backends": {usage.capability: usage.backend for usage in verdict.demo_usage},
+        "demo_backends_allowed": loaded.acceptance.allow_demo_backends,
         "estimate": estimate.model_dump(mode="json"),
         "stages": [{"stage": stage.value, "nodes": count} for stage, count in plan.graph.describe_stages()],
         "dataset": {
@@ -104,6 +112,17 @@ def plan_command(
     output.line(f"estimate   {estimate.estimated_seconds:.2f}s, cost {cost}")
     for capability, backend in payload["capability_bindings"].items():
         output.line(f"  {capability:44s} -> {backend}")
+    if payload["demo_backends"]:
+        if payload["demo_backends_allowed"]:
+            output.line("DEMONSTRATION stack: this run would export inspection data, not training data")
+        else:
+            output.line("DEMONSTRATION stack: the export would be refused")
+        for capability, backend in payload["demo_backends"].items():
+            output.line(f"  {capability:44s} -> {backend} (demonstration stand-in)")
+        output.line(
+            "  bind production backends for these capabilities, or set "
+            "acceptance.allow_demo_backends: true to say you know"
+        )
     if payload["unmet_capabilities"]:
         output.line("UNBOUND capabilities:")
         for line in plan.unmet_explanation():

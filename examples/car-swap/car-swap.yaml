@@ -43,6 +43,13 @@ refine:
     - operator: refine.harmonize
       config: { strength: 0.45 }
 
+# The profile this example runs against is a demonstration stack: a saliency detector, a
+# box-prompt segmenter, a synthetic generator, and colour-appearance evaluators. They exercise
+# every stage, which is what lets the example run with no download, and they are not training-data
+# quality. Exporting with them has to be an explicit choice, which is what this line is.
+acceptance:
+  allow_demo_backends: true
+
 quality:
   minimum_overall: 0.55
   hard_gates:

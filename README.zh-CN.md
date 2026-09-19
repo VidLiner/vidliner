@@ -1,5 +1,14 @@
 # VidLiner
 
+<p align="center">
+  <img src="./brand/assets/vidliner-logo-dark.svg" alt="VidLiner — 可证明的合成数据" width="420" />
+</p>
+
+<p align="center">
+  <strong>生成。验证。重建标签。导出证据。</strong><br />
+  <sub>早期 Alpha · 图像流水线 MVP · 视频能力规划中</sub>
+</p>
+
 [English](./README.md)
 
 **以对象为中心、强制验证的合成训练数据生产流水线。**
@@ -13,6 +22,8 @@ VidLiner 把你已有的图片变成**经过验证的**训练样本：定位目�
 ```
 
 任何一个候选样本如果无法安全地成为训练数据，就会被拒绝，并且拒绝原因是机器可读的。
+
+> **项目状态：** VidLiner 仍处于早期 Alpha。内置 profile 为演示和测试提供确定性、无外部依赖的全流程；在真实训练数据集使用前，请绑定生产级 backend。品牌资产见[品牌工具包](./brand/README.zh-CN.md)，首发文案见[发布素材](./brand/launch/README.zh-CN.md)。
 
 ---
 
@@ -217,6 +228,25 @@ export:
 | `annotation_consistency` | 越大越好 | 重建标签为空、越界或类别不符 |
 
 硬性门槛失败即拒绝，与总体分无关；落在复核带内的边缘样本标为 `NEEDS_REVIEW`，由静态 HTML 报告交给人工判定。详见 `docs/zh/quality.md`。
+
+---
+
+## 演示 backend 不允许导出
+
+新克隆仓库拿到的 profile 绑定的是显著性启发式、合成生成器与颜色评估器，因此整条流水线无需下载模型、无需 API Key 就能跑。它们每一项都是**占位实现**，用它们产出的数据集"长得像"训练数据，却不是训练数据。
+
+因此 job 会跑，但导出会被拒绝：
+
+```bash
+vidliner plan examples/car-swap/car-swap.yaml
+# DEMONSTRATION stack: the export would be refused
+#   vision.object_detection.v1       -> builtin_detector (demonstration stand-in)
+#   vision.instance_segmentation.v1  -> builtin_segmenter (demonstration stand-in)
+#   generation.object_replacement.v1 -> builtin_replacement (demonstration stand-in)
+#   quality.semantic_match.v1        -> builtin_metrics (demonstration stand-in)
+```
+
+这四项能力产出的正是最终进入数据集的数据；planner、refiner、artifact evaluator 出现占位实现，只改变样本是**怎么做出来的**，不阻塞任何东西。为这四项绑定真实 backend，拒绝就会消失。如果这份数据集本来就是用于查看，请在 recipe 里写明 `acceptance.allow_demo_backends: true`——它会连同当时使用的绑定一起被记进 manifest，而此后修改任何 profile 都无法改变那次判定。详见 `docs/zh/backends.md`。
 
 ---
 

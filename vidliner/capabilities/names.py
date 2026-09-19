@@ -34,10 +34,12 @@ __all__ = [
     "CAP_TRACKING",
     "CAP_VIDEO_REPLACEMENT",
     "KNOWN_CAPABILITIES",
+    "PRODUCTION_CAPABILITIES",
     "capability_for_refinement",
     "describe_capability",
     "is_builtin_capability",
     "is_known_capability",
+    "requires_production_backend",
 ]
 
 # --- perception -------------------------------------------------------------
@@ -100,10 +102,30 @@ KNOWN_CAPABILITIES: Final[tuple[str, ...]] = tuple(
 #: them and ``vidliner backend check`` must not report them as uncovered.
 BUILTIN_CAPABILITIES: Final[tuple[str, ...]] = (CAP_QUALITY_BACKGROUND,)
 
+#: Capabilities that must be served by a production implementation before a dataset may be exported.
+#:
+#: These four are the ones whose output *becomes* the training data: what is detected is what is
+#: replaced, what is segmented is what is labelled, what is generated is what is trained on, and what
+#: is judged is what is allowed through. A demonstration stand-in for any of them can still run a
+#: complete job — that is what makes the demo and the test suite possible — but the dataset it
+#: produces is not training data, and saying so is the difference between an honest pipeline and a
+#: plausible-looking one.
+PRODUCTION_CAPABILITIES: Final[tuple[str, ...]] = (
+    CAP_OBJECT_DETECTION,
+    CAP_INSTANCE_SEGMENTATION,
+    CAP_OBJECT_REPLACEMENT,
+    CAP_QUALITY_SEMANTIC,
+)
+
 
 def is_builtin_capability(name: str) -> bool:
     """Whether the pipeline satisfies ``name`` without a bound backend."""
     return name in BUILTIN_CAPABILITIES
+
+
+def requires_production_backend(name: str) -> bool:
+    """Whether ``name`` must be served by a production backend before a dataset may be exported."""
+    return name in PRODUCTION_CAPABILITIES
 
 
 _DESCRIPTIONS: Final[dict[str, str]] = {

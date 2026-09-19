@@ -36,6 +36,11 @@ def run_command(
     include_review: bool = typer.Option(
         False, "--include-review", help="Export NEEDS_REVIEW candidates too."
     ),
+    allow_demo: bool = typer.Option(
+        False,
+        "--allow-demo",
+        help="Export even though demonstration backends are bound (inspection data, not training data).",
+    ),
     fail_fast: bool = typer.Option(False, "--fail-fast", help="Stop at the first node failure."),
     timeout: float = typer.Option(0.0, "--timeout", help="Whole-job timeout in seconds (0 = none)."),
     verbose: bool = typer.Option(False, "--verbose", help="Mirror the event log to stderr."),
@@ -49,6 +54,10 @@ def run_command(
         if seed is not None:
             loaded = loaded.model_copy(
                 update={"replacement": loaded.replacement.model_copy(update={"seed": seed})}
+            )
+        if allow_demo:
+            loaded = loaded.model_copy(
+                update={"acceptance": loaded.acceptance.model_copy(update={"allow_demo_backends": True})}
             )
         session = Session.open(resolve_workspace(workspace), runtime_path=runtime)
     except ValidationFailure as exc:

@@ -121,6 +121,10 @@ def make_recipe(
             "minimum_target_presence": 0.10,
             "review_band": 0.0,
         },
+        # The fixtures bind the built-in demonstration backends, so a job in a test acknowledges
+        # that deliberately — exactly as the example recipe and an operator running a demo must. The
+        # production guard has its own tests with production backends.
+        "acceptance": {"allow_demo_backends": True},
         "export": {"format": fmt, "path": output, "copy_images": True},
         "limits": {"workers": 2, "resume": True, "cache": True, "per_node_timeout_s": 60},
     }

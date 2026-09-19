@@ -23,10 +23,13 @@ ty check vidliner               # type check
 ```
 tests/
   conftest.py            fixtures: workspace, session, synthetic dataset, recipe builder
+  fixtures/              backends that exist only for a test: one that erases the object,
+                         and declarative markers for the production guard
   unit/                  canonical + identity, domain models, engine, storage, quality,
-                         annotations, architecture rules
+                         annotations, verification, production guard, docs consistency,
+                         architecture rules
   contract/              every backend through its protocol
-  pipeline/              end to end, export, resume + cache, CLI
+  pipeline/              end to end, export, resume + cache, verification loop, CLI
 ```
 
 ---
@@ -77,6 +80,9 @@ deterministic stand-in, and the HTTP adapter.
 | quality | gate ordering, hard gates beating a high overall score, review band, warn gates, missing-metric policies |
 | annotations | COCO and YOLO roundtrips, malformed lines, missing class names, empty bundles |
 | the pipeline | ten-image end-to-end run, COCO and YOLO export, provenance completeness, secret absence, split safety, multi-target fan-out, skip semantics |
+| the verification loop | an object that is not in the generated image yields `found=False` and `OBJECT_NOT_FOUND` rather than a node failure; the exported label comes from the regenerated mask |
+| the production guard | a demonstration stack is refused at pre-flight and again at export, all four critical capabilities are named at once, and the manifest is the source of truth |
+| documentation | the reason-code listing and the capability table match the code in both languages |
 | architecture | no vendor SDK outside `backends/`, no upward layer imports, no silent exception handling, no undocumented public API |
 
 ---
@@ -97,6 +103,7 @@ deterministic stand-in, and the HTTP adapter.
 | job cancellation | `test_engine_honours_cancellation`, `test_job_cancel_marks_the_job` |
 | invalid annotation | `test_export_with_a_tiny_minimum_area_drops_samples` |
 | dataset leakage | `test_exporter_refuses_a_leaking_dataset`, `test_assert_no_leakage_reports_every_offending_edge` |
+| dangling capability binding | `test_default_profile_has_no_dangling_binding` |
 
 ---
 
@@ -110,3 +117,6 @@ deterministic stand-in, and the HTTP adapter.
 4. For a new gate, add both a passing and a failing case, and assert the reason code.
 5. If the change is architectural — a new layer, a new vendor dependency — add the rule to
    `tests/unit/test_architecture.py` first. The rule is cheaper than the review comment.
+6. If you add a reason code or a capability, `tests/unit/test_docs_consistency.py` fails until both
+   language versions list it. Documentation that mirrors a closed enum is generated from it or
+   checked against it; here it is checked, because prose around the list is worth keeping.

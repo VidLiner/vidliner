@@ -38,7 +38,9 @@ playground/
 ```
 
 The starter profile binds every capability to a built-in local backend, so the pipeline runs
-immediately. `vidliner backend check --workspace ./playground` shows what is bound.
+immediately. Those backends are **demonstration stand-ins**, and the pipeline will say so before it
+lets you export a dataset built on them — step 5 shows what that looks like.
+`vidliner backend check --workspace ./playground` shows what is bound.
 
 ---
 
@@ -117,6 +119,25 @@ estimate   6.30s, cost n/a
 
 Planning resolves bindings and counts nodes. It calls **no generative backend**, which is what makes
 this safe to run before you have decided anything.
+
+It also tells you what the stack is:
+
+```
+DEMONSTRATION stack: the export would be refused
+  vision.object_detection.v1                   -> builtin_detector (demonstration stand-in)
+  vision.instance_segmentation.v1              -> builtin_segmenter (demonstration stand-in)
+  generation.object_replacement.v1             -> builtin_replacement (demonstration stand-in)
+  quality.semantic_match.v1                    -> builtin_metrics (demonstration stand-in)
+  bind production backends for these capabilities, or set acceptance.allow_demo_backends: true to say you know
+```
+
+Those four capabilities produce the data that ends up in the dataset, and every one of them is served
+by a stand-in: a saliency heuristic, a synthetic generator, and a colour heuristic. The job will run
+— the pipeline is exercisable end to end on any checkout — but the result is shaped like training
+data and is not training data, so the export is refused unless you say otherwise. A recipe says so
+with `acceptance.allow_demo_backends: true`, which is what `examples/car-swap/car-swap.yaml` does and
+what the rest of this walkthrough assumes. See
+[Writing a backend](./backends.md#demonstration-backends-and-the-production-guard).
 
 `plan` also writes `runs/<job>/plan.json`: the exact graph, every node's lineage and config, and the
 estimate. `vidliner run --dry-run` produces the same document and then stops.

@@ -1,5 +1,7 @@
 # 数据集、split 与完整性
 
+[English](../datasets.md)
+
 数据增强流水线会以三种特定方式把数据集变差。本文说明 VidLiner 如何逐一防止。
 
 ---

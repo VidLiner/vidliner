@@ -1,5 +1,7 @@
 # 编写 Backend
 
+[English](../backends.md)
+
 **能力（capability）**是流水线需要的一项本领；**backend** 是它的一种具体实现。流水线只引用能力名，因此替换模型只是一次配置改动。
 
 ---
@@ -62,6 +64,15 @@ class MyDetector:
 ```
 
 一个 backend 可以提供多项能力：全部写进 `capabilities`，并实现对应方法。
+
+如果你的适配器只是一个**占位实现**——启发式、桩、或者能产出"看起来合理"的结果、却并没有真正测量该能力所声称之事的基线——请明确声明：
+
+```python
+class MyPlaceholderDetector:
+    demo_only = True      # runtime profile 里可以重复声明，但类属性是权威来源
+```
+
+这不是注释，而是阻止流水线用它导出数据集的开关。参见[演示 backend 与生产防护](#演示-backend-与生产防护)。
 
 ---
 
@@ -145,19 +156,71 @@ GenerationOutcome(image=..., backend_id=..., model_id=..., seed=..., cost_estima
 
 它们的存在是为了让新克隆的仓库立刻能跑，并且对自身定位很诚实：
 
-| Backend | 能力 | 说明 |
-| --- | --- | --- |
-| `heuristic_detector` | detection | 基于显著性；只报告它认识**且**数据集标注过的类别 |
-| `heuristic_segmenter` | segmentation | 由 box / point prompt 生长 mask；拒绝纯文本 prompt |
-| `heuristic_scene` | scene analysis | 测量朝向、光照、接地、阴影、遮挡 |
-| `rule_based_planner` | planning | 确定性；**从不**调用任何模型 |
-| `fake_replacement` | replacement | 确定性合成图像，标记 `synthetic: true` |
-| `local_metric_evaluator` | semantic / artifact / embedding | 颜色外观启发式 + 伪影测量 |
-| `local_refiner` | mask / blend / harmonise | 确定性 numpy 运算 |
-| `perceptual_hash` | embedding | 64 位 pHash，以向量形式暴露 |
-| `http_replacement` | replacement | 通用 JSON + base64 适配器，可对接任意编辑服务 |
+| Backend | 能力 | 仅限演示 | 说明 |
+| --- | --- | --- | --- |
+| `heuristic_detector` | detection | **是** | 基于显著性；只报告它认识**且**数据集标注过的类别 |
+| `heuristic_segmenter` | segmentation | **是** | 由 box / point prompt 生长 mask；拒绝纯文本 prompt |
+| `heuristic_scene` | scene analysis | **是** | 测量朝向、光照、接地、阴影、遮挡 |
+| `rule_based_planner` | planning | **是** | 确定性；**从不**调用任何模型 |
+| `fake_replacement` | replacement | **是** | 确定性合成图像，标记 `synthetic: true` |
+| `local_metric_evaluator` | semantic / artifact / embedding | **是** | 颜色外观启发式 + 伪影测量 |
+| `local_refiner` | mask / blend / harmonise | 否 | 确定性 numpy 运算 |
+| `perceptual_hash` | embedding | **是** | 64 位 pHash，以向量形式暴露 |
+| `http_replacement` | replacement | 否 | 通用 JSON + base64 适配器，可对接任意编辑服务 |
 
 每个内置探测在"只是基线而非训练模型"时会报告 `degraded`，因此 `vidliner backend check` 不会夸大就绪程度。
+
+---
+
+## 演示 backend 与生产防护
+
+默认 profile 是一套**演示栈**：正因为有它，项目才能在没有模型下载、没有 API Key 的情况下跑起来、也能被测试。它的感知、生成与评估 backend 全部是占位实现。
+
+它们有用，恰恰因为它们是假的；它们危险，也恰恰因为它们是假的。显著性检测器报告的是"这里有个东西"而不是"这是什么类别"；合成生成器画的是纯色而不是一辆车；颜色启发式无法判断一辆 SUV 看起来像不像 SUV。用它们产出的数据集**长得**和训练数据一模一样——同样的文件、同样的 schema、同样的溯源——但它不是训练数据，因为这条链路里没有任何一环真正测量过标签所断言的东西。
+
+因此流水线把两个问题分开，而不是用一个"跑成功了吗"含糊带过：
+
+| 问题 | 回答 |
+| --- | --- |
+| job 可以运行吗？ | 可以，绑定任何 backend 都行。demo、测试，以及"先看看新数据集长什么样"都依赖这一点。 |
+| 结果可以导出吗？ | 只有当"其输出**成为**数据本身"的那些能力由生产级 backend 提供时，或者 recipe 明确声明"我知道自己在要什么"时。 |
+
+这四项能力定义在 `PRODUCTION_CAPABILITIES`（`vidliner/capabilities/names.py`）中。判定标准是：这里的占位实现污染的**是数据本身**，而不是产出数据的过程。
+
+| 能力 | 为什么关键 |
+| --- | --- |
+| `vision.object_detection.v1` | 检测到什么，就会被替换并重新标注什么 |
+| `vision.instance_segmentation.v1` | 分割出什么，就是导出的 mask、bbox、polygon 与面积 |
+| `generation.object_replacement.v1` | 生成出什么，就是模型要训练的东西 |
+| `quality.semantic_match.v1` | 判定通过什么，就放行什么 |
+
+其余能力——planner、refiner、scene analyser、artifact evaluator、embedder——**不**关键：它们出现占位实现，改变的是样本**怎么做出来的**，而不是它的标签是否描述了画面。把这些也算进去只会让防护无法使用，而且是虚假的精确。
+
+**如何声明一个 backend 可信。** 没有这种开关。写一个声明了该能力、并且真的做事的适配器，然后绑定它：
+
+```yaml
+# runtime.yaml
+backends:
+  prod_detector:
+    use: my_project.backends:YoloDetector
+    options: { weights: checkpoints/yolo11n.onnx }
+bindings:
+  vision.object_detection.v1: prod_detector
+  vision.instance_segmentation.v1: prod_segmenter
+  generation.object_replacement.v1: prod_editor
+  quality.semantic_match.v1: prod_judge
+```
+
+防护只读 `demo_only` 标记（来自 profile 条目与类本身），不读别的。它不会探测、导入或构造 backend，也不判断一个 backend **好不好**——只判断它是否自称占位实现。判断质量是质量门槛的职责；判断诚实是这条标记的职责。
+
+**当数据集本来就是演示用途时。** 在 recipe 里声明，这样它会被记录、可被审阅：
+
+```yaml
+acceptance:
+  allow_demo_backends: true   # 仅供查看，不是训练数据——manifest 会如实记录
+```
+
+也可以在 `vidliner run` / `vidliner export` 上传 `--allow-demo` 做一次性放行。此时 manifest 会记录 `demo_backends` 与 `demo_backends_allowed`，而 `vidliner plan` 会在**生成任何东西之前**打印同样的警告。运行之后再改 profile，无法把那次运行追溯性地变成生产级：导出判定依据的是 manifest 记录的、该 job 实际使用了什么。
 
 ---
 

@@ -68,6 +68,15 @@
 * "没找到对象"是一种结果（`OBJECT_NOT_FOUND`），而不是节点失败。
 * 验证：`pytest tests/unit/test_verification.py tests/pipeline/test_verification_loop.py`，后者用一个"删掉对象"的 backend 做端到端验证。
 
+## M11 —— 生产防护（MVP 之后，路线图第 2 项）
+
+* `BackendSpec` 与 backend 类上都可写 `demo_only`；随附的本地 profile 标出了它全部七个占位实现，而这些类自己也声明了该标记。
+* `PRODUCTION_CAPABILITIES` 指定"其输出**成为**训练数据"的四项能力，且只有这四项计数。`assess_production_readiness` 报告涉事绑定；`assert_production_ready` 以 `DEMO_BACKEND_NOT_ALLOWED` 拒绝。
+* 拒绝发生两次：一次在生成任何候选之前的预检，另一次在导出时——后者依据 manifest 而非当前 profile 决策。
+* `AcceptanceSpec.allow_demo_backends`（默认 `false`）是唯一的显式覆盖开关，同时暴露为 `vidliner run --allow-demo` 与 `vidliner export --allow-demo`；manifest 会记录该开关与涉事能力。
+* `vidliner plan` 在运行之前就打印同样的警告，连同绑定与补救办法。
+* 验证：`pytest tests/unit/test_production_guard.py`——判定结果、拒绝、文档化的覆盖开关、对"运行后才改 recipe"的导出防护，以及 `plan` 在演示 profile 与生产 profile 上的两种报告。
+
 ## M9 —— 文档与 Definition of Done
 
 * README、ARCHITECTURE、CONTRIBUTING 与 `docs/`（中英文），以及可运行的示例。
@@ -75,18 +84,20 @@
 
 ## 验证记录
 
-MVP 已完成。撰写本文时：
+MVP 以及路线图第 1、2 项均已完成。撰写本文时：
 
 | 检查项 | 命令 | 结果 |
 | --- | --- | --- |
-| 格式 | `ruff format --check .` | 137 个文件已格式化 |
-| 静态检查 | `ruff check .` | 干净 |
+| 格式 | `ruff format --check .` | 146 个文件已格式化 |
+| 静态检查 | `ruff check vidliner tests examples` | 干净 |
 | 类型检查 | `ty check vidliner` | 干净 |
 | 安装 | `pip install -e .` 后 `vidliner --help` | 在干净环境中可用 |
-| 测试 | `pytest -q` | 367 个测试通过 |
-| 示例 | `python examples/car-swap/demo.py` | 端到端运行，无需联网 |
+| 测试 | `pytest -q` | 397 个测试通过 |
+| 示例 | `python examples/car-swap/demo.py` | 240 节点、30 候选、23 通过，无需联网 |
+| 防护 | `vidliner plan examples/car-swap/car-swap.yaml` | 在生成前报告演示栈 |
+| 文档 | `pytest tests/unit/test_docs_consistency.py` | reason code 与能力清单和代码一致 |
 
-规模：包代码约 23.4k 行、105 个模块；测试约 4.9k 行；中文文档约 3.0k 行，与英文文档一一对应。
+规模：包代码约 24.3k 行、109 个模块；测试约 6.3k 行；`docs/` 下 Markdown 约 5.4k 行，其中中文约 2.5k 行，另加 README/ARCHITECTURE/CONTRIBUTING 双语与 `brand/` 品牌素材。
 
 ## Definition of Done（产品需求 §38）
 

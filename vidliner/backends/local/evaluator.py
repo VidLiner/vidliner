@@ -14,6 +14,7 @@ a runtime-profile edit rather than a pipeline change.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -69,6 +70,7 @@ class LocalMetricEvaluatorBackend(LocalBackend):
     """Measure semantic agreement, artifacts, and embeddings locally."""
 
     backend_id = "local_metric_evaluator"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_QUALITY_SEMANTIC, CAP_QUALITY_ARTIFACT, CAP_QUALITY_EMBEDDING)
     determinism = Determinism.DETERMINISTIC
@@ -93,17 +95,11 @@ class LocalMetricEvaluatorBackend(LocalBackend):
         return self._sync.embed(request, context)
 
     async def probe(self) -> BackendProbe:
-        """Report readiness, stating plainly that these are heuristics rather than a learned model."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
+        return replace(
+            probe,
             health="degraded",
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
             message="heuristic evaluators; bind a classifier or VLM for semantic judgement",
             details={"heuristic": True, **probe.details},
         )

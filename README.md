@@ -1,5 +1,14 @@
 # VidLiner
 
+<p align="center">
+  <img src="./brand/assets/vidliner-logo-dark.svg" alt="VidLiner — Synthetic data you can prove" width="420" />
+</p>
+
+<p align="center">
+  <strong>Generate. Verify. Rebuild labels. Export evidence.</strong><br />
+  <sub>Early alpha · Image pipeline MVP · Video capabilities are planned</sub>
+</p>
+
 **Object-centric synthetic data augmentation with mandatory verification.**
 
 [简体中文](./README.zh-CN.md)
@@ -17,6 +26,10 @@ training image  +  correct label  +  provenance  +  quality evidence
 
 If a candidate cannot become safe training data, it is rejected, and the reason is recorded in a
 machine-readable form.
+
+> **Project status:** VidLiner is early-alpha software. The built-in profile is deterministic and
+> dependency-free for demos and testing; bind production-grade backends before using output in a
+> real training dataset. See the [brand kit](./brand/README.md) and [launch copy](./brand/launch/README.md).
 
 ---
 
@@ -229,6 +242,32 @@ training data:
 A hard gate failure rejects regardless of the overall score. A near miss inside the review band
 becomes `NEEDS_REVIEW`, which the static HTML report presents for a human decision. Full detail is
 in `docs/quality.md`.
+
+---
+
+## Demonstration backends are refused at export
+
+The profile you get on a fresh checkout binds saliency heuristics, a synthetic generator, and a colour
+evaluator, so the whole pipeline runs with no model download and no API key. Every one of those is a
+*stand-in*, and a dataset built on them is shaped like training data without being training data.
+
+So the job runs, and the export is refused:
+
+```bash
+vidliner plan examples/car-swap/car-swap.yaml
+# DEMONSTRATION stack: the export would be refused
+#   vision.object_detection.v1       -> builtin_detector (demonstration stand-in)
+#   vision.instance_segmentation.v1  -> builtin_segmenter (demonstration stand-in)
+#   generation.object_replacement.v1 -> builtin_replacement (demonstration stand-in)
+#   quality.semantic_match.v1        -> builtin_metrics (demonstration stand-in)
+```
+
+Those four capabilities produce the data that ends up in the dataset; a stand-in for a planner, a
+refiner, or an artifact evaluator changes only how a sample was *made*, and does not block anything.
+Bind real backends for the four and the refusal disappears. If the dataset is deliberately for
+inspection, say so in the recipe with `acceptance.allow_demo_backends: true` — it is recorded in the
+manifest next to the bindings that were used, and no profile edited afterwards can change that
+verdict. See `docs/backends.md`.
 
 ---
 

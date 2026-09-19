@@ -105,6 +105,15 @@ def quantise_box(...):
 
 Say why the code is the way it is. The code already says what it does.
 
+### 9. A stand-in says it is one
+
+If your backend is a heuristic, a stub, or a baseline that produces plausible output without
+measuring what its capability claims to measure, declare `demo_only = True` on the class. The
+production guard refuses to export a dataset whose detection, segmentation, replacement, or semantic
+matching came from a marked backend, and it is the only thing standing between a passing demo and a
+dataset that quietly is not training data. Never mark a real implementation as a stand-in to silence
+the guard, and never mark a stand-in as real to get past it.
+
 ---
 
 ## Clean-room policy

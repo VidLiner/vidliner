@@ -144,6 +144,13 @@ class BackendProbe:
     determinism: Determinism = Determinism.NONDETERMINISTIC
     safe_to_retry: bool = False
     external: bool = False
+    demo_only: bool = False
+    """Whether this backend is a demonstration stand-in rather than a production implementation.
+
+    A backend that reports ``demo_only`` says, about itself, that its output must not be treated as
+    training data. The runtime refuses to export a dataset produced with such a backend unless the
+    recipe explicitly acknowledges it.
+    """
     message: str = ""
     details: dict[str, Any] = field(default_factory=dict)
 

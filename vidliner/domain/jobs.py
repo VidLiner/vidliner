@@ -145,6 +145,13 @@ class JobManifest(BaseModel):
     failure_class: str | None = None
     failure_code: str | None = None
     failure_message: str | None = None
+    demo_backends: tuple[str, ...] = ()
+    """Production-critical capabilities served by demonstration backends during this job.
+
+    Recorded even when the recipe allowed the export: a manifest that does not say a dataset was
+    produced with stand-ins is a manifest that cannot be audited.
+    """
+    demo_backends_allowed: bool = False
     vidliner_version: str = "0.1.0"
 
     @model_validator(mode="after")

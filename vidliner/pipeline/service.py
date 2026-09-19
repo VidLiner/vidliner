@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from vidliner.capabilities.names import PRODUCTION_CAPABILITIES
 from vidliner.control.prepare import build_sample_contexts, load_source_annotations
 from vidliner.control.sources import DatasetSource, DiscoveryResult
 from vidliner.core.errors import ErrorCode, InfrastructureFailure, ValidationFailure
@@ -23,9 +24,16 @@ from vidliner.domain.jobs import JobManifest
 from vidliner.domain.provenance import ProvenanceRecord, SeedRecord
 from vidliner.domain.quality import QualityReport
 from vidliner.domain.recipe import Recipe
+from vidliner.pipeline.export_names import kinds_for, matches_kind
 from vidliner.pipeline.exporter import DatasetExporter, ExportOutcome, ExportRecord
 from vidliner.pipeline.planner import CompiledPlan, build_plan
 from vidliner.pipeline.runner import JobOptions, JobRunner, SampleOutcome
+from vidliner.runtime.production import (
+    DemoUsage,
+    ProductionVerdict,
+    assert_production_ready,
+    assess_production_readiness,
+)
 from vidliner.runtime.profile import RuntimeProfile, default_profile, load_profile
 from vidliner.runtime.registry import BackendRegistry
 from vidliner.storage.state import StateStore
@@ -323,6 +331,13 @@ class Session:
                 code=ErrorCode.CAPABILITY_UNBOUND,
                 detail={"unmet": list(plan.resolution.unmet)},
             )
+        # Pre-flight: a job that could never be exported fails in a second, not after paying for
+        # candidates nobody may keep. The check is repeated at export, because a plan's bindings and
+        # a run's bindings can differ when the profile changed between the two.
+        registry = self.registry
+        verdict = assess_production_readiness(registry, plan.resolution.as_mapping())
+        if not recipe.acceptance.allow_demo_backends:
+            assert_production_ready(verdict)
         contexts = self.sample_contexts(recipe, discovery)
         runner = JobRunner(
             recipe=recipe,
@@ -330,9 +345,10 @@ class Session:
             workspace=self._workspace,
             store=self.store,
             state=self.state,
-            registry=self.registry,
+            registry=registry,
             sample_contexts=contexts,
             options=request.options,
+            demo_verdict=verdict,
         )
         runner.register_sources()
         manifest = await runner.execute()
@@ -490,6 +506,7 @@ class Session:
             include_review_report=loaded.export.include_review_report,
             min_area_px=loaded.export.min_annotation_area_px,
         )
+        self._assert_export_allowed(loaded, manifest)
         payload = outcomes if outcomes is not None else self._outcomes_from_state(job_id, loaded)
         records = self.export_records(job_id, payload, loaded, include_review=include_review)
         exporter = DatasetExporter(
@@ -634,6 +651,29 @@ class Session:
         """Sample ids this job touched, for diagnostics and tests."""
         return [row["sample_id"] for row in self.state.samples(job_id=job_id)]
 
+    def _assert_export_allowed(self, recipe: Recipe, manifest: JobManifest) -> None:
+        """Refuse to write a dataset that a demonstration stack produced.
+
+        The manifest is the source of truth here rather than the current profile: a job records the
+        bindings it actually ran with, and a profile edited afterwards must not retroactively make an
+        old run look production-grade.
+        """
+        if manifest.demo_backends and not recipe.acceptance.allow_demo_backends:
+            registry = self.registry
+            verdict = ProductionVerdict(
+                demo_usage=tuple(
+                    DemoUsage(
+                        capability,
+                        manifest.capability_bindings.get(capability, "unknown"),
+                        "recorded when the job ran",
+                    )
+                    for capability in manifest.demo_backends
+                ),
+                considered=PRODUCTION_CAPABILITIES,
+            )
+            del registry
+            assert_production_ready(verdict)
+
     def _artifact_size(self, digest: str) -> int:
         try:
             return len(self.store.read(digest, verify=False))
@@ -772,24 +812,23 @@ def _load_profile(workspace: Workspace, runtime_path: Path | None) -> RuntimePro
 
 
 def _candidate_evidence(sample_dir: Path, kind: str, entry: dict[str, Any]) -> Path | None:
-    """Locate one candidate's evidence file, keyed by its candidate key.
+    """Locate one candidate's evidence file.
 
-    Evidence is per candidate: a sample with three candidates has three annotation files, three
-    quality reports, and three rendered images. Exporting reads the file whose name carries the
-    candidate's key, and **refuses to guess** when only the key would distinguish them — exporting
-    one candidate's label under another candidate's image is exactly the kind of silent corruption
-    this project exists to prevent.
+    The keyed name is authoritative: exporting one candidate's label under another candidate's image
+    is exactly the corruption this project exists to prevent, so a missing keyed file is reported
+    rather than worked around by taking whichever file happens to be first.
     """
-    raw = str(entry.get("candidate_key") or "")
-    cleaned = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in raw)
-    if cleaned:
-        keyed = sample_dir / f"{kind}-{cleaned}.json"
-        return keyed if keyed.is_file() else None
+    candidate_key = str(entry.get("candidate_key") or "")
+    for stem in kinds_for(candidate_key):
+        candidate = sample_dir / f"{kind}-{stem}.json"
+        if candidate.is_file():
+            return candidate
     unkeyed = sample_dir / f"{kind}.json"
     if unkeyed.is_file():
         return unkeyed
-    matches = sorted(sample_dir.glob(f"{kind}-*.json"))
-    return matches[0] if len(matches) == 1 else None
+    matches = sorted(path for path in sample_dir.glob(f"{kind}-*.json") if matches_kind(path, kind))
+    # Only unambiguous: a single candidate's evidence, with no key to tell them apart.
+    return matches[0] if len(matches) == 1 and not candidate_key else None
 
 
 def _metric_outcome(row: dict[str, Any]) -> Any:

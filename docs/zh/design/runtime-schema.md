@@ -28,11 +28,21 @@ backends:
       score_floor: 0.3
     capacity: { limit: 2 }
     estimates: { unit_seconds: 0.4 }
+    demo_only: true             # 显著性启发式，不是检测器
 
   local_segmenter:
     use: vidliner.backends.heuristic.segmentation:HeuristicSegmentationBackend
     options: { dilate_px: 2 }
     estimates: { unit_seconds: 0.6 }
+    demo_only: true
+
+  local_scene:
+    use: vidliner.backends.heuristic.scene:HeuristicSceneBackend
+    demo_only: true
+
+  local_planner:
+    use: vidliner.backends.heuristic.planner:RuleBasedPlannerBackend
+    demo_only: true
 
   http_replacement:
     use: vidliner.backends.http_replacement:HttpReplacementBackend
@@ -47,18 +57,18 @@ backends:
     capacity: { limit: 1, period_s: 6 }
     estimates: { unit_cost: 0.02, unit_seconds: 9, external: true }
 
-  local_vlm:
-    use: vidliner.backends.heuristic.evaluator:HeuristicEvaluatorBackend
-    options: {}
+  local_evaluator:
+    use: vidliner.backends.local.evaluator:LocalMetricEvaluatorBackend
+    demo_only: true
 
 bindings:
   vision.object_detection.v1: local_detector
   vision.instance_segmentation.v1: local_segmenter
-  vision.scene_analysis.v1: builtin_scene
-  planning.replacement.v1: builtin_planner
+  vision.scene_analysis.v1: local_scene
+  planning.replacement.v1: local_planner
   generation.object_replacement.v1: http_replacement
-  quality.semantic_match.v1: local_vlm
-  quality.artifact_detection.v1: local_vlm
+  quality.semantic_match.v1: local_evaluator
+  quality.artifact_detection.v1: local_evaluator
 ```
 
 ## 规则
@@ -70,7 +80,8 @@ bindings:
 5. `capacity.limit` 限制进入该 backend 的并发调用；`period_s` 增加可补充的速率预算（用于遵守云端服务的限流策略）。
 6. `estimates` 只供 `plan`/`--dry-run` 使用，永不影响执行。
 7. `device` 是提示性的：backend 可以声明设备要求，无法满足的 profile 会在预检阶段以 `DEVICE_UNAVAILABLE` 失败。
-8. 由流水线自行测量的能力（`BUILTIN_CAPABILITIES`，当前为 `quality.background_preservation.v1`）**不得**出现在 `bindings` 中——它们不需要 backend。
+8. `demo_only` 把 backend 标记为占位实现。它只改变一件事：当 `PRODUCTION_CAPABILITIES` 中的某项能力解析到被标记的 backend 时，除非 recipe 设置 `acceptance.allow_demo_backends`，数据集不得导出。Backend 类自己也可以声明该标记，且以类声明为准。检查只读这个标记——绝不导入、实例化或探测 backend，因此在规划阶段零成本。
+9. 由流水线自行测量的能力（`BUILTIN_CAPABILITIES`，当前为 `quality.background_preservation.v1`）**不得**出现在 `bindings` 中——它们不需要 backend。
 
 ## 脱敏
 

@@ -19,17 +19,21 @@ CREATE TABLE jobs (
     recipe_hash       TEXT NOT NULL,
     recipe_snapshot   TEXT NOT NULL,              -- canonical JSON
     runtime_snapshot  TEXT NOT NULL,              -- canonical JSON, credentials redacted
+    runtime_profile   TEXT NOT NULL DEFAULT '',
     seed              INTEGER NOT NULL,
     workspace_root    TEXT NOT NULL,
     run_dir           TEXT NOT NULL,
+    dataset_input     TEXT NOT NULL DEFAULT '',
+    output_path       TEXT NOT NULL DEFAULT '',
     node_count        INTEGER NOT NULL DEFAULT 0,
+    manifest          TEXT NOT NULL,              -- full JobManifest JSON: the audit record
+                                                  --   carriers demo_backends, seed_tree,
+                                                  --   capability_bindings, reason histogram
+    counters          TEXT NOT NULL DEFAULT '{}', -- processed/accepted/rejected/review/failed
     created_at        TEXT NOT NULL,
     updated_at        TEXT NOT NULL,
     finished_at       TEXT,
-    counters          TEXT NOT NULL DEFAULT '{}', -- processed/accepted/rejected/review/failed
-    failure_class     TEXT,
-    failure_code      TEXT,
-    failure_message   TEXT
+    failure_class     TEXT, failure_code TEXT, failure_message TEXT
 );
 CREATE INDEX jobs_state_created ON jobs(state, created_at DESC);
 
@@ -175,6 +179,15 @@ CREATE TABLE duplicates (
     PRIMARY KEY (job_id, candidate_id, duplicate_of)
 );
 ```
+
+## The manifest is an audit record
+
+`jobs.manifest` stores the whole `JobManifest`, not a summary, because several decisions must be
+reproducible long after the run: which backend served each capability, which bindings were
+demonstration stand-ins, the seed tree, the reason-code histogram, and the state the job reached.
+The **export guard** is the load-bearing case — it decides from the stored manifest whether a dataset
+may be written, so editing `runtime.yaml` after a run cannot retroactively make that run
+production-grade. See ADR-019.
 
 ## Access layer
 

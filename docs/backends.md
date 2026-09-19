@@ -72,6 +72,17 @@ class MyDetector:
 A backend may satisfy several capabilities; declare them all in `capabilities` and implement the
 matching methods.
 
+If your adapter is a **stand-in** — a heuristic, a stub, a baseline that produces plausible-looking
+output without measuring what the capability claims to measure — say so:
+
+```python
+class MyPlaceholderDetector:
+    demo_only = True  # the runtime profile may repeat this, but the class is authoritative
+```
+
+This is not a comment. It is what stops the pipeline from exporting a dataset built on it. See
+[Demonstration backends and the production guard](#demonstration-backends-and-the-production-guard).
+
 ---
 
 ## Two shapes of backend
@@ -164,20 +175,91 @@ normally is not.
 
 They exist so the pipeline runs on a fresh checkout, and they are honest about what they are:
 
-| Backend | Capabilities | Notes |
-| --- | --- | --- |
-| `heuristic_detector` | detection | saliency-based; reports only classes it knows *and* the dataset labels |
-| `heuristic_segmenter` | segmentation | grows a mask from a box or point prompt; refuses a text-only prompt |
-| `heuristic_scene` | scene analysis | measures orientation, lighting, ground contact, shadow, occlusion |
-| `rule_based_planner` | planning | deterministic; makes no model calls, ever |
-| `fake_replacement` | replacement | deterministic synthetic imagery, marked `synthetic: true` |
-| `local_metric_evaluator` | semantic, artifact, embedding | colour-appearance heuristic plus artifact measurements |
-| `local_refiner` | mask, blend, harmonise | deterministic numpy operations |
-| `perceptual_hash` | embedding | 64-bit pHash exposed as a vector |
-| `http_replacement` | replacement | generic JSON + base64 adapter for any editing service |
+| Backend | Capabilities | Demo? | Notes |
+| --- | --- | --- | --- |
+| `heuristic_detector` | detection | **yes** | saliency-based; reports only classes it knows *and* the dataset labels |
+| `heuristic_segmenter` | segmentation | **yes** | grows a mask from a box or point prompt; refuses a text-only prompt |
+| `heuristic_scene` | scene analysis | **yes** | measures orientation, lighting, ground contact, shadow, occlusion |
+| `rule_based_planner` | planning | **yes** | deterministic; makes no model calls, ever |
+| `fake_replacement` | replacement | **yes** | deterministic synthetic imagery, marked `synthetic: true` |
+| `local_metric_evaluator` | semantic, artifact, embedding | **yes** | colour-appearance heuristic plus artifact measurements |
+| `local_refiner` | mask, blend, harmonise | no | deterministic numpy operations |
+| `perceptual_hash` | embedding | **yes** | 64-bit pHash exposed as a vector |
+| `http_replacement` | replacement | no | generic JSON + base64 adapter for any editing service |
 
 Each built-in probe reports `degraded` where it is a baseline rather than a trained model, so
 `vidliner backend check` never overstates readiness.
+
+---
+
+## Demonstration backends and the production guard
+
+The default profile is a **demonstration stack**: it is what makes the project runnable and testable
+with no model download and no API key. Every one of its perception, generation, and evaluation
+backends is a stand-in.
+
+They are useful precisely because they are not real, and they are dangerous for the same reason. A
+saliency detector reports "something is here" rather than a class. A synthetic generator paints a
+flat colour rather than a car. A colour heuristic cannot judge whether an SUV looks like an SUV. A
+dataset built on them is *shaped* exactly like training data — same files, same schema, same
+provenance — and it is not training data, because nothing in the loop ever measured the thing the
+label asserts.
+
+So the pipeline separates two questions that a single "did it work" flag would conflate:
+
+| Question | Answer |
+| --- | --- |
+| May the job run? | Yes, with any bound backend. The demo, the tests, and a first look at a new dataset all depend on it. |
+| May the result be exported? | Only when the capabilities whose output *becomes* the data are served by production backends, or when the recipe says explicitly that it knows what it is asking for. |
+
+The four capabilities are listed in `PRODUCTION_CAPABILITIES`
+(`vidliner/capabilities/names.py`) and are the ones where a stand-in corrupts the data itself rather
+than the process that produced it:
+
+| Capability | Why it is critical |
+| --- | --- |
+| `vision.object_detection.v1` | what is detected is what gets replaced and re-labelled |
+| `vision.instance_segmentation.v1` | what is segmented is the exported mask, bbox, polygon, and area |
+| `generation.object_replacement.v1` | what is generated is what the model trains on |
+| `quality.semantic_match.v1` | what is judged is what is allowed through |
+
+Everything else — the planner, the refiner, the scene analyser, the artifact evaluator, the embedder
+— is **not** critical: a stand-in there changes *how* a sample was made, not whether its label
+describes the picture. Refusing those would make the guard unusable and would be false precision.
+
+**How to declare a backend trustworthy.** There is no flag for it. Write an adapter that declares the
+capability and does the work, and bind it:
+
+```yaml
+# runtime.yaml
+backends:
+  prod_detector:
+    use: my_project.backends:YoloDetector
+    options: { weights: checkpoints/yolo11n.onnx }
+bindings:
+  vision.object_detection.v1: prod_detector
+  vision.instance_segmentation.v1: prod_segmenter
+  generation.object_replacement.v1: prod_editor
+  quality.semantic_match.v1: prod_judge
+```
+
+The guard reads the `demo_only` marker (from the profile entry and from the class itself) and
+nothing else. It does not probe, import, or construct a backend, and it does not test whether a
+backend is *good* — only whether it claims to be a stand-in. Judging quality is what the quality
+gates are for; judging honesty is what this marker is for.
+
+**When the dataset is deliberately a demonstration.** Set it in the recipe, where it is recorded and
+reviewable:
+
+```yaml
+acceptance:
+  allow_demo_backends: true   # inspection data, not training data — the manifest will say so
+```
+
+or pass `--allow-demo` to `vidliner run` / `vidliner export` for a one-off. The manifest then records
+`demo_backends` and `demo_backends_allowed`, and `vidliner plan` prints the same warning *before*
+anything is generated. A profile edited after a run cannot retroactively make that run
+production-grade: the exported decision is based on what the manifest says the job actually used.
 
 ---
 

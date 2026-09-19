@@ -12,6 +12,7 @@ its place without touching the pipeline.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from vidliner.backends.base import LocalBackend
@@ -34,6 +35,7 @@ class RuleBasedPlannerBackend(LocalBackend):
     """Turn an intent plus a measured scene into an executable plan."""
 
     backend_id = "rule_based_planner"
+    demo_only = True
     backend_version = "1.0.0"
     capabilities = (CAP_PLANNING,)
     determinism = Determinism.DETERMINISTIC
@@ -48,19 +50,11 @@ class RuleBasedPlannerBackend(LocalBackend):
         return self._sync.plan(request, context)
 
     async def probe(self) -> BackendProbe:
-        """Report readiness. This planner calls no model, by construction."""
+        """Report readiness, deriving from the base probe so the demo declaration is preserved."""
         probe = await super().probe()
-        return BackendProbe(
-            backend_id=probe.backend_id,
-            version=probe.version,
-            health=probe.health,
-            capabilities=self.capabilities,
-            device=probe.device,
-            determinism=self.determinism,
-            safe_to_retry=True,
-            external=False,
+        return replace(
+            probe,
             message="deterministic rule-based planner; makes no model calls",
-            details=probe.details,
         )
 
 

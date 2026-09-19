@@ -97,6 +97,15 @@ class BackendSpec(BaseModel):
     estimates: EstimateSpec = Field(default_factory=EstimateSpec)
     enabled: bool = True
     description: str = ""
+    demo_only: bool = False
+    """Whether this backend is a demonstration stand-in rather than a production implementation.
+
+    A heuristic detector, a synthetic generator, and an embedding backend that is really a perceptual
+    hash can all drive a complete job and a complete test suite. None of them can be trusted to
+    produce training data, because none of them measures what it claims to measure. Marking them here
+    — and in their own probe — is what lets the pipeline refuse to export production data built on
+    them while still running the demo end to end.
+    """
 
     @model_validator(mode="after")
     def _check_use(self) -> Self:
@@ -275,28 +284,34 @@ def default_profile(*, device: str = "cpu") -> RuntimeProfile:
                 use="vidliner.backends.heuristic.detector:HeuristicDetectorBackend",
                 options={"score_floor": 0.30},
                 estimates=EstimateSpec(unit_seconds=0.02),
+                demo_only=True,
             ),
             "builtin_segmenter": BackendSpec(
                 use="vidliner.backends.heuristic.segmentation:HeuristicSegmentationBackend",
                 options={"dilate_px": 2},
                 estimates=EstimateSpec(unit_seconds=0.03),
+                demo_only=True,
             ),
             "builtin_scene": BackendSpec(
                 use="vidliner.backends.heuristic.scene:HeuristicSceneBackend",
                 estimates=EstimateSpec(unit_seconds=0.02),
+                demo_only=True,
             ),
             "builtin_planner": BackendSpec(
                 use="vidliner.backends.heuristic.planner:RuleBasedPlannerBackend",
                 estimates=EstimateSpec(unit_seconds=0.01),
+                demo_only=True,
             ),
             "builtin_replacement": BackendSpec(
                 use="vidliner.backends.fake.replacement:FakeReplacementBackend",
                 options={"variation": "tint"},
                 estimates=EstimateSpec(unit_cost=0.0, unit_seconds=0.05),
+                demo_only=True,
             ),
             "builtin_metrics": BackendSpec(
                 use="vidliner.backends.local.evaluator:LocalMetricEvaluatorBackend",
                 estimates=EstimateSpec(unit_seconds=0.05),
+                demo_only=True,
             ),
             "builtin_refiner": BackendSpec(
                 use="vidliner.backends.local.refiner:LocalRefinerBackend",
@@ -305,6 +320,7 @@ def default_profile(*, device: str = "cpu") -> RuntimeProfile:
             "builtin_phash": BackendSpec(
                 use="vidliner.backends.local.fingerprint:PerceptualHashBackend",
                 estimates=EstimateSpec(unit_seconds=0.01),
+                demo_only=True,
             ),
         },
         bindings={

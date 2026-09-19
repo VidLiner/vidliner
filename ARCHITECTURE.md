@@ -159,6 +159,15 @@ One capability in the vocabulary is deliberately *not* served by a backend:
 `quality.background_preservation.v1` is a deterministic pixel comparison the pipeline performs
 itself, so it stays in the vocabulary (recipes gate on it) but is never bound in a profile.
 
+A backend can also declare `demo_only`, and the shipped profile marks its own heuristics, synthetic
+generator, and colour evaluator with it. That marker feeds the **production guard**: four
+capabilities — detection, instance segmentation, object replacement, and semantic matching — produce
+the data that ends up in the dataset, so if one of them is served by a stand-in the job runs and the
+**export is refused** unless the recipe sets `acceptance.allow_demo_backends`. The check reads the
+marker only, so it costs nothing at plan time, and it runs twice: in pre-flight, before anything is
+generated, and at export, deciding from the stored manifest rather than from the current profile.
+See ADR-019.
+
 Blocking backends (local models, decoders) declare `blocking = True` and expose their synchronous
 work through `self._sync`; the runtime runs that on a worker thread. Native-async backends (HTTP
 clients) are awaited directly with a separate capacity budget.

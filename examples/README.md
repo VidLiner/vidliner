@@ -76,17 +76,27 @@ producing a dataset that looks complete and is not.
 
 ### Using real models
 
-Nothing in the recipe changes. Point three capabilities at real backends in the workspace's
-`runtime.yaml`:
+Nothing in the recipe changes. Point the four data-defining capabilities at real backends in the
+workspace's `runtime.yaml`:
 
 ```yaml
 backends:
-  my_detector: { use: my_project.detector:DetectorBackend, options: { model_path: /models/yolo.onnx } }
-  my_editor:   { use: my_project.editor:EditorBackend, credentials: { api_key: { source: env, name: EDIT_KEY } } }
+  my_detector:  { use: my_project.detector:DetectorBackend, options: { model_path: /models/yolo.onnx } }
+  my_segmenter: { use: my_project.segmenter:SegmenterBackend, options: { model_path: /models/sam.onnx } }
+  my_editor:    { use: my_project.editor:EditorBackend, credentials: { api_key: { source: env, name: EDIT_KEY } } }
+  my_judge:     { use: my_project.judge:SemanticJudgeBackend }
 
 bindings:
   vision.object_detection.v1: my_detector
+  vision.instance_segmentation.v1: my_segmenter
   generation.object_replacement.v1: my_editor
+  quality.semantic_match.v1: my_judge
 ```
 
-See `docs/backends.md` for the contract and `docs/runtime.md` for the profile.
+Then remove `acceptance.allow_demo_backends` from the recipe: with these bindings the export is no
+longer refused, and the acknowledgement would be a lie about the data.
+
+The example recipe sets `acceptance.allow_demo_backends: true` because it runs on the built-in
+demonstration stack, and the pipeline refuses to export a dataset produced that way unless the recipe
+says it knows. `vidliner plan` prints the same warning before anything is generated. See
+`docs/backends.md` for the contract and `docs/runtime.md` for the profile.

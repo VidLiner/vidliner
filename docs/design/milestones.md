@@ -75,6 +75,23 @@ checks pass, not when its files exist.
 * Verify: `pytest tests/unit/test_verification.py tests/pipeline/test_verification_loop.py`, the
   latter end to end against a backend that deletes the object.
 
+## M11 — Production guard (post-MVP, roadmap item 2)
+
+* `demo_only` on both `BackendSpec` and the backend class; the shipped local profile marks all seven
+  of its stand-ins, and each of those classes declares the marker itself.
+* `PRODUCTION_CAPABILITIES` names the four capabilities whose output *becomes* the training data, and
+  only those count. `assess_production_readiness` reports the offending bindings;
+  `assert_production_ready` refuses with `DEMO_BACKEND_NOT_ALLOWED`.
+* The refusal happens twice: in pre-flight, before a single candidate is generated, and again at
+  export, deciding from the manifest rather than from the current profile.
+* `AcceptanceSpec.allow_demo_backends` (default `false`) is the single explicit override, exposed as
+  `vidliner run --allow-demo` and `vidliner export --allow-demo`; the manifest records the flag and
+  the offending capabilities.
+* `vidliner plan` prints the same warning, with the bindings and the remedy, before anything runs.
+* Verify: `pytest tests/unit/test_production_guard.py` — the verdict, the refusal, the documented
+  override, the export guard against a recipe edited after the run, and the `plan` report on both a
+  demonstration and a production profile.
+
 ## M9 — Documentation and Definition of Done
 
 * README, ARCHITECTURE, CONTRIBUTING and the `docs/` set, plus a runnable example.
@@ -82,19 +99,22 @@ checks pass, not when its files exist.
 
 ## Verification record
 
-The MVP is complete. At the time of writing:
+The MVP and roadmap items 1 and 2 are complete. At the time of writing:
 
 | Check | Command | Result |
 | --- | --- | --- |
-| Format | `ruff format --check .` | 137 files already formatted |
-| Lint | `ruff check .` | clean |
+| Format | `ruff format --check .` | 146 files already formatted |
+| Lint | `ruff check vidliner tests examples` | clean |
 | Types | `ty check vidliner` | clean |
 | Install | `pip install -e .` then `vidliner --help` | works in a clean environment |
-| Tests | `pytest -q` | 367 passed |
-| Demo | `python examples/car-swap/demo.py` | runs end to end with no network access |
+| Tests | `pytest -q` | 397 passed |
+| Demo | `python examples/car-swap/demo.py` | 240 nodes, 30 candidates, 23 accepted, no network access |
+| Guard | `vidliner plan examples/car-swap/car-swap.yaml` | reports the demonstration stack before generating |
+| Docs | `pytest tests/unit/test_docs_consistency.py` | reason codes and capabilities match the code |
 
-Size: ~23.4k lines of package code across 105 modules, ~4.9k lines of tests.
-Documentation: ~3.0k lines of Chinese text mirroring the English set, plus the design record.
+Size: ~24.3k lines of package code across 109 modules, ~6.3k lines of tests.
+Documentation: ~5.4k lines of Markdown in `docs/`, of which ~2.5k are the Chinese set, plus the
+README/ARCHITECTURE/CONTRIBUTING pair and the `brand/` kit.
 
 ## Definition of Done (from the product requirement §38)
 
