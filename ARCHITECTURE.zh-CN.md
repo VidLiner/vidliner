@@ -174,7 +174,7 @@ Backend 还可以声明 `demo_only`，随附 profile 用这个标记标出了自
 | 新的导出格式 | 在 `annotations/` 加转换器，并在 `ANNOTATION_FORMATS` 里登记 |
 | 新的质量指标 | 加入 `MetricName`，在质量阶段计算，并在 recipe 门槛中引用 |
 | 新的精修步骤 | 加能力名、加 operator、加 recipe step——装配器会自动接上 |
-| 视频支持 | 实现跟踪与视频替换能力；数据模型、引擎扇出、时序指标都已就绪 |
+| 视频支持 | 使用 `domain.video` 承载确定性变体、标签/时间变换和对比轴，再在其上接入 Hypit 渲染、跟踪和可信时间验证 |
 | 不同的执行后端 | 实现 `NodeRunner`；引擎对此无感 |
 
 ---

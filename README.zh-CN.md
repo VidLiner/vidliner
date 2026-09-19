@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>生成。验证。重建标签。导出证据。</strong><br />
-  <sub>早期 Alpha · 图像流水线 MVP · 视频能力规划中</sub>
+  <sub>早期 Alpha · 图像流水线 MVP · 视频变体规划已接入</sub>
 </p>
 
 [English](./README.md)

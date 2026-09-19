@@ -343,6 +343,28 @@ def test_recipe_required_capabilities_include_refinement_steps() -> None:
     assert "generation.object_replacement.v1" in capabilities
 
 
+def test_recipe_can_carry_a_video_variant_plan() -> None:
+    recipe = Recipe.model_validate(
+        _recipe_document(
+            video={
+                "id": "street",
+                "seed": 17,
+                "strategy": "paired",
+                "operators": [
+                    {
+                        "name": "format.reframe",
+                        "axis": "format",
+                        "domains": {"aspect": ["1:1", "16:9"]},
+                    }
+                ],
+            }
+        )
+    )
+    assert recipe.video is not None
+    assert "vision.object_tracking.v1" in recipe.required_capabilities()
+    assert "generation.video_replacement.v1" not in recipe.required_capabilities()
+
+
 def test_recipe_rejects_unknown_quality_metric() -> None:
     with pytest.raises(ValidationError, match="unknown quality metric"):
         Recipe.model_validate(_recipe_document(quality={"hard_gates": {"made_up": 0.5}}))

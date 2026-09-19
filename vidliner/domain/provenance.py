@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vidliner.core.results import utc_now
 from vidliner.domain.enums import AugmentationMode, DecisionState
+from vidliner.domain.video import LabelTransform
 
 __all__ = ["ProvenanceRecord", "SeedRecord", "assert_no_secrets"]
 
@@ -83,6 +84,11 @@ class ProvenanceRecord(BaseModel):
     backend_ids: dict[str, str] = Field(default_factory=dict)
     model_ids: dict[str, str] = Field(default_factory=dict)
     generation_parameters: dict[str, Any] = Field(default_factory=dict)
+
+    # Video-aware lineage (optional for still-image records)
+    variant_id: str | None = None
+    variant_seed: int | None = Field(default=None, ge=0)
+    label_transform: LabelTransform | None = None
 
     # What came out
     output_digest: str = Field(min_length=16, max_length=64)

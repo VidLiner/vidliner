@@ -84,6 +84,17 @@ def validate_command(
         plan_splits = _split_plan(loaded)
     except ValidationFailure as exc:
         raise typer.Exit(code=fail(exc, output=output)) from exc
+    video_payload: dict[str, object] | None = None
+    if loaded.video is not None:
+        from vidliner.domain.video import enumerate_video_variants
+
+        variants = enumerate_video_variants(loaded.video)
+        video_payload = {
+            "id": loaded.video.id,
+            "strategy": loaded.video.strategy,
+            "variants": len(variants),
+            "axes": sorted({operator.axis for operator in loaded.video.operators}),
+        }
     payload = {
         "recipe": loaded.name,
         "hash": loaded.recipe_hash(),
@@ -96,6 +107,7 @@ def validate_command(
         "export_format": loaded.export.format,
         "required_capabilities": list(capabilities),
         "split_notes": list(plan_splits.notes),
+        "video": video_payload,
     }
     output.payload(payload, fallback=f"recipe {loaded.name} is valid ({loaded.recipe_hash()[:12]})")
     if json_mode:
@@ -109,6 +121,11 @@ def validate_command(
         f"  candidates       {loaded.replacement.candidates_per_object} per object, mode {loaded.replacement.mode}"
     )
     output.line(f"  export           {loaded.export.format} -> {loaded.export.path}")
+    if video_payload is not None:
+        output.line(
+            f"  video            {video_payload['variants']} variants ({video_payload['strategy']})"
+            f" across {', '.join(video_payload['axes'])}"
+        )
     output.line(f"  capabilities     {', '.join(capabilities)}")
     for note in plan_splits.notes:
         output.line(f"  note             {note}")

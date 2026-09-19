@@ -152,6 +152,7 @@ def build_default_registry() -> OperatorRegistry:
     from vidliner.operators import segmentation as segmentation_ops
     from vidliner.operators import selection as selection_ops
     from vidliner.operators import verification as verification_ops
+    from vidliner.operators import video as video_ops
 
     registry = OperatorRegistry()
     for module in (
@@ -164,6 +165,7 @@ def build_default_registry() -> OperatorRegistry:
         replacement_ops,
         refinement_ops,
         verification_ops,
+        video_ops,
         evaluation_ops,
         annotation_ops,
         export_ops,

@@ -123,6 +123,8 @@ class PortType(StrEnum):
     DATASET_SLICE = "dataset_slice"
     DECISION = "decision"
     ARTIFACT_LIST = "artifact_list"
+    VIDEO_VARIANTS = "video_variants"
+    CONTRAST_PAIRS = "contrast_pairs"
 
 
 class StageName(StrEnum):

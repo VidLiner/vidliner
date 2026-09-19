@@ -202,7 +202,7 @@ for a valid result.
 | a new export format | add a converter in `annotations/` and an entry in `ExportFormat` |
 | a new quality metric | add it to `MetricName`, compute it in the quality stage, and reference it in a recipe gate |
 | a new refinement step | add a capability name, an operator, and a recipe step — the assembler picks it up |
-| video support | implement the tracking and video-replacement capabilities; the data model, engine fan-out, and temporal metrics already exist |
+| video support | use `domain.video` for deterministic variants, label/time transforms, and contrast axes; then implement Hypit rendering, tracking, and trusted temporal verification on top |
 | a different execution backend | implement `NodeRunner`; the engine is agnostic |
 
 ---

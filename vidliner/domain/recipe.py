@@ -11,6 +11,8 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from vidliner.domain.video import VideoAugmentSpec
+
 __all__ = [
     "AcceptanceSpec",
     "DatasetSpec",
@@ -27,6 +29,7 @@ __all__ = [
     "SplitSpec",
     "TargetSpec",
     "TemporalGatesSpec",
+    "VideoAugmentSpec",
 ]
 
 
@@ -353,6 +356,7 @@ class Recipe(BaseModel):
     export: ExportSpec = Field(default_factory=ExportSpec)
     limits: LimitsSpec = Field(default_factory=LimitsSpec)
     estimates: EstimatesSpec = Field(default_factory=EstimatesSpec)
+    video: VideoAugmentSpec | None = None
 
     @model_validator(mode="after")
     def _check_identity(self) -> Self:
@@ -440,4 +444,10 @@ class Recipe(BaseModel):
         for step in self.refine.steps:
             if step.enabled:
                 capabilities.append(capability_for_refinement(step.operator))
+        if self.video is not None:
+            from vidliner.capabilities.names import CAP_OBJECT_TRACKING, CAP_VIDEO_REPLACEMENT
+
+            capabilities.append(CAP_OBJECT_TRACKING)
+            if any(operator.kind == "generative" for operator in self.video.operators):
+                capabilities.append(CAP_VIDEO_REPLACEMENT)
         return tuple(dict.fromkeys(capabilities))

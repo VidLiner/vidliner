@@ -87,6 +87,15 @@ class PipelineAssembler:
     def _assemble_sample(self, sample: str) -> None:
         recipe = self._recipe
         sample_lineage = lineage_key_sample(sample)
+        if recipe.video is not None:
+            self._add(
+                "video.plan_variants",
+                lineage=sample_lineage,
+                stage=StageName.PLAN,
+                group="video",
+                config={"spec": recipe.video.model_dump(mode="json")},
+                inputs={},
+            )
         ingest = self._add(
             "ingest.image",
             lineage=sample_lineage,

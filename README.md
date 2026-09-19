@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Generate. Verify. Rebuild labels. Export evidence.</strong><br />
-  <sub>Early alpha · Image pipeline MVP · Video capabilities are planned</sub>
+  <sub>Early alpha · Image pipeline MVP · Video variant planning is available</sub>
 </p>
 
 **Object-centric synthetic data augmentation with mandatory verification.**
