@@ -192,6 +192,7 @@ export:
 | `vidliner recipe validate\|schema\|init\|show` | 处理 recipe。 |
 | `vidliner plan <recipe>` | 编译并估算开销。**不会调用任何生成 backend。** |
 | `vidliner workflow export\|validate\|schema\|catalog\|preview` | 导出与校验类型化工作流画布，离线预览计划。 |
+| `vidliner video probe\|generate\|render\|preview` | 渲染确定性本地变体，记录标签与时间变换，并离线对比播放。 |
 | `vidliner run <recipe>` | 执行、评估、导出。`--dry-run` 在生成前停止。 |
 | `vidliner jobs` | 列出 job 及其计数器与通过率。 |
 | `vidliner job show\|resume\|cancel` | 查看、恢复或取消 job。 |
@@ -294,6 +295,11 @@ MVP 已端到端实现图片流水线：ingest、detection、segmentation、scen
 
 编译后的计划还可导出为带版本的工作流画布，对照算子注册表校验，并通过离线 HTML 页面搜索、
 平移、缩放及查看节点详情。使用方式见[工作流画布交换](docs/zh/workflow.md)。
+
+离线画布现在支持拖动节点和编辑配置 JSON 草稿，下载后需用 `workflow validate` 校验。
+`video generate/render` 可生成真实 MP4 本地变体，支持画幅填充、调色、变速、裁剪和静音。
+这不是 AI 模型生成，生产数据仍需标签投影、时序验证与质量门禁。示例为
+[`examples/video/demo-spec.json`](examples/video/demo-spec.json)。
 
 **刻意尚未实现**（但扩展点已就位）：视频替换与跟踪（`ObjectTrack`、`FrameRef`、`temporal_consistency` 已在数据模型中）、分布式 worker、对象存储、Web 复核界面。任何未实现的功能都会 `raise NotImplementedError` 或抛出明确的能力错误，而不是假装成功。
 

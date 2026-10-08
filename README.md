@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Generate. Verify. Rebuild labels. Export evidence.</strong><br />
-  <sub>Early alpha · Image pipeline MVP · Video variant planning is available</sub>
+  <sub>Early alpha · Verified image pipeline · Local video rendering and workflow editing</sub>
 </p>
 
 **Object-centric synthetic data augmentation with mandatory verification.**
@@ -200,6 +200,7 @@ export:
 | `vidliner recipe validate\|schema\|init\|show` | Work with recipes. |
 | `vidliner plan <recipe>` | Compile and cost the job. Calls no generative backend. |
 | `vidliner workflow export\|validate\|schema\|catalog\|preview` | Exchange a typed workflow canvas and inspect it offline. |
+| `vidliner video probe\|generate\|render\|preview` | Render local video variants with label transforms and compare them offline. |
 | `vidliner run <recipe>` | Execute, evaluate, and export. `--dry-run` stops before generation. |
 | `vidliner jobs` | List jobs with their counters and acceptance rates. |
 | `vidliner job show\|resume\|cancel` | Inspect, resume, or cancel a job. |
@@ -321,6 +322,10 @@ CLI, and reports.
 Compiled plans can also be exported to a versioned workflow canvas, validated against the
 operator catalogue, and inspected in an offline HTML preview with search, pan, zoom and node details.
 See [workflow canvas exchange](docs/workflow.md).
+
+The offline canvas supports node layout and JSON configuration drafts. Local MP4 variants can be
+rendered with FFmpeg through `video generate` or `video render`; see the
+[video augmentation contract](docs/design/video-augmentation.md) for supported operations and a sample spec.
 
 Deliberately **not** implemented yet, with the extension points already in place: video replacement
 and tracking (`ObjectTrack`, `FrameRef`, and `temporal_consistency` exist in the data model),

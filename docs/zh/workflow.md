@@ -1,7 +1,7 @@
 # 工作流画布交换
 
 VidLiner 现在可以把编译后的 recipe 导出为画布文档，校验接线，并生成可离线打开的交互式
-HTML 预览。它让任务在生成前就能被查看，也为后续可视化编辑器提供稳定接口。
+HTML 编辑器。它让任务在生成前就能被查看，并支持编辑节点布局和配置草稿。
 
 画布复用 `OperationGraph`、算子注册表及其执行契约。文档里的 backend 名称只是规划提示；
 执行 recipe 时仍必须重新解析能力绑定并检查生产导出与验收策略。
@@ -18,7 +18,9 @@ vidliner workflow preview workflow.json --output workflow.html
 
 用浏览器打开 `workflow.html`：按算子、节点 ID 或 lineage 搜索，拖动背景平移，使用滚轮或按钮
 缩放，选择节点查看配置、端口、连接、能力需求、backend 提示、重试和并行限制。
-页面无需联网，也不会调用模型。当前预览是只读的。
+页面无需联网，也不会调用模型。点击 `Edit layout` 后可拖动节点，连接线同步更新；选中节点
+后可编辑配置 JSON 对象。点击 `Save JSON` 下载草稿，再用 `workflow validate` 校验。
+浏览器只检查 JSON 基本形式，不替代算子 Schema 校验。
 
 导出默认只规划一个样本，`--limit 0` 包含全部可增强样本。已有输出文件需要 `--force` 才能
 覆盖。导出会发现数据集并解析声明的能力绑定，不实例化 backend；未绑定的能力仍会保留，
@@ -63,8 +65,9 @@ restored_graph = graph_from_workflow(document)
 
 ## 当前边界
 
-本版提供画布交换、类型化算子面板与离线计划预览。执行入口仍是 `vidliner run recipe.yaml`。
+本版提供画布交换、类型化算子面板与离线计划编辑。执行入口仍是 `vidliner run recipe.yaml`。
 画布文档是图快照，不能替代 recipe 的数据集及验收策略，也没有独立执行命令。
 
-可视化编辑、媒体资产浏览、实时任务状态、视频渲染及服务端仍待实现。
+`video probe/generate/render` 已支持 FFmpeg 本地变体渲染，尚未接入画布执行。
+图结构编辑、媒体资产浏览、实时任务状态及服务端仍待实现。
 [Toonflow 借鉴评估](../design/toonflow-assessment.md) 说明了选型依据及后续方向。

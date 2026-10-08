@@ -12,6 +12,7 @@ from vidliner.cli import (
     plan_cmd,
     recipe_cmd,
     run_cmd,
+    video_cmd,
     workflow_cmd,
     workspace_cmd,
 )
@@ -42,6 +43,7 @@ app.add_typer(job_cmd.app, name="job", help="Show, resume, or cancel a job.")
 app.add_typer(job_cmd.report_app, name="report", help="Regenerate a job's reports.")
 app.add_typer(backend_cmd.app, name="backend", help="Inspect and check runtime backends.")
 app.add_typer(workflow_cmd.app, name="workflow", help="Export, validate and preview a workflow canvas.")
+app.add_typer(video_cmd.app, name="video", help="Probe and render deterministic video variants.")
 
 
 def main() -> None:

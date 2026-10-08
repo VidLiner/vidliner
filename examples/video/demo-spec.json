@@ -1,0 +1,11 @@
+{
+  "format": "vidliner/video-spec@1",
+  "id": "local-video-demo",
+  "seed": 42,
+  "strategy": "paired",
+  "operators": [
+    {"name": "format.reframe", "axis": "format", "domains": {"aspect": ["1:1", "9:16"]}},
+    {"name": "appearance.grade", "axis": "style", "domains": {"saturation": [0.8]}},
+    {"name": "temporal.speed", "axis": "tempo", "domains": {"factor": [0.8, 1.2]}}
+  ]
+}

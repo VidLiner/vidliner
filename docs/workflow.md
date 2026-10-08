@@ -2,7 +2,7 @@
 
 VidLiner can export a compiled recipe as a portable canvas document, validate its connections,
 and produce an interactive, standalone HTML preview. This makes a plan inspectable before any
-generation runs and provides a stable boundary for a future visual editor.
+generation runs and supports editing layout and operator configuration drafts.
 
 The canvas uses the existing `OperationGraph`, operator registry and execution contracts.
 It does not introduce another scheduler. Backend names in the document are planning hints;
@@ -21,7 +21,10 @@ vidliner workflow preview workflow.json --output workflow.html
 Open `workflow.html` in a browser. Search by operator, node ID or lineage, drag the background to
 pan, use the mouse wheel or buttons to zoom, and select a node to inspect its config, ports,
 connections, capability requirements, backend hints, retry policy and concurrency limit.
-The page works offline and loads no external libraries. It is read-only; it does not run a model.
+The page works offline and loads no external libraries. `Edit layout` enables node dragging with
+connected edges following the node. The selected node's configuration can be edited as a JSON
+object. `Save JSON` downloads the draft; run `vidliner workflow validate` on it before using it.
+Browser JSON syntax checks do not replace operator schema validation. Editing does not run a model.
 
 Export defaults to one sample to keep the first canvas manageable. `--limit 0` includes all
 augmentable samples. Neither export nor preview overwrites an existing file unless `--force`
@@ -70,10 +73,11 @@ not arbitrary Python objects. Node order is normalized to the graph's topologica
 
 ## Scope
 
-This release provides canvas interchange, a typed palette, and offline plan inspection. Recipe
+This release provides canvas interchange, a typed palette, and offline plan inspection and editing. Recipe
 execution remains `vidliner run recipe.yaml`. The document is a graph snapshot, not a replacement
 for the recipe's dataset and acceptance policy. It has no standalone execution command.
 
-Visual editing, media asset browsing, live job status, video rendering and an authenticated
-server are future work. See the [Toonflow assessment](design/toonflow-assessment.md) for the
+Local video rendering is available through `video probe/generate/render`; it is not yet wired to
+canvas execution. Structural graph editing, media asset browsing, live job status and an authenticated
+server remain future work. See the [Toonflow assessment](design/toonflow-assessment.md) for the
 design rationale and the relationship to the existing video planner and Rust kernels.

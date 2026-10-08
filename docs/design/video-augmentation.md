@@ -51,3 +51,33 @@ Local transforms may be deterministic and offline, but they are not a substitute
 generated result. Hypit-backed operations must return new semantic anchors when they edit identity
 or text. A planned or imported variant with stale anchors is not a preserving sample. It must pass
 redetection, resegmentation, and temporal gates before entering a production dataset.
+
+## Local rendering
+
+Install `ffmpeg` and `ffprobe` on PATH, then render real MP4 files from a source video:
+
+```sh
+vidliner video probe source.mp4 --json
+vidliner video generate examples/video/demo-spec.json --input source.mp4 --output rendered
+vidliner video render examples/video/demo-spec.json --input source.mp4 --variant 1 --output square.mp4
+vidliner video preview rendered/manifest.json --output rendered/review.html
+```
+
+`generate` means deterministic local variant generation, not an AI video model. Supported operations
+are `format.reframe` (letterbox, never crop), `appearance.grade`, `temporal.speed`, `temporal.trim`,
+and `audio.mute`. Generative operations fail closed and require a model backend. Only one reframe
+per variant is supported. Existing outputs are protected unless `--force` is explicit, and the
+source cannot be overwritten.
+
+`manifest.json` records source/output digests, sampled operations, measured video properties, and
+the normalized viewport and source-to-output clock mapping as `label_transform`. Labels still
+need projection, clipping, and verification before dataset export. Muting audio is marked as an
+edited semantic result, not a claim that speech labels remain valid. Rendering does not authorize
+production export and is independent of the image DAG's acceptance policy.
+
+Open `review.html` to compare source and variants with native video controls and inspect each
+variant's evidence. Media stays in its original location; the page uses relative file paths, so
+keep the source, rendered outputs, and HTML at the same relative locations. If serving over HTTP,
+serve their common parent directory. Playback clocks are independent because variants may run at
+different speeds. Time mappings are continuous mappings; frame sampling adds up to one frame of
+quantization and still requires temporal verification.
