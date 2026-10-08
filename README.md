@@ -199,6 +199,7 @@ export:
 | `vidliner inspect <dir>` | Report media, dimensions, splits, and annotation coverage. |
 | `vidliner recipe validate\|schema\|init\|show` | Work with recipes. |
 | `vidliner plan <recipe>` | Compile and cost the job. Calls no generative backend. |
+| `vidliner workflow export\|validate\|schema\|catalog\|preview` | Exchange a typed workflow canvas and inspect it offline. |
 | `vidliner run <recipe>` | Execute, evaluate, and export. `--dry-run` stops before generation. |
 | `vidliner jobs` | List jobs with their counters and acceptance rates. |
 | `vidliner job show\|resume\|cancel` | Inspect, resume, or cancel a job. |
@@ -305,6 +306,7 @@ its cache and an interrupted run resume.
 | `docs/quality.md` | Metrics, gates, decisions, and reason codes. |
 | `docs/datasets.md` | Splits, lineage, duplicates, and the dataset report. |
 | `docs/testing.md` | Test layout and the synthetic fixtures. |
+| `docs/workflow.md` | Canvas exchange, operator palette and interactive offline previews. |
 | `docs/design/` | Architecture Decision Record, domain model, DAG design, schemas, milestones. |
 
 ---
@@ -315,6 +317,10 @@ The MVP implements the image pipeline end to end: ingest, detection, segmentatio
 planning, candidate generation, refinement, **post-generation re-detection and re-segmentation**,
 quality evaluation, annotation regeneration, acceptance, dataset export, job state, resume, cache,
 CLI, and reports.
+
+Compiled plans can also be exported to a versioned workflow canvas, validated against the
+operator catalogue, and inspected in an offline HTML preview with search, pan, zoom and node details.
+See [workflow canvas exchange](docs/workflow.md).
 
 Deliberately **not** implemented yet, with the extension points already in place: video replacement
 and tracking (`ObjectTrack`, `FrameRef`, and `temporal_consistency` exist in the data model),

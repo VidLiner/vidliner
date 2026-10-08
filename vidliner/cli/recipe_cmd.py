@@ -85,15 +85,17 @@ def validate_command(
     except ValidationFailure as exc:
         raise typer.Exit(code=fail(exc, output=output)) from exc
     video_payload: dict[str, object] | None = None
+    video_axes: list[str] = []
     if loaded.video is not None:
         from vidliner.domain.video import enumerate_video_variants
 
         variants = enumerate_video_variants(loaded.video)
+        video_axes = sorted({operator.axis for operator in loaded.video.operators})
         video_payload = {
             "id": loaded.video.id,
             "strategy": loaded.video.strategy,
             "variants": len(variants),
-            "axes": sorted({operator.axis for operator in loaded.video.operators}),
+            "axes": video_axes,
         }
     payload = {
         "recipe": loaded.name,
@@ -124,7 +126,7 @@ def validate_command(
     if video_payload is not None:
         output.line(
             f"  video            {video_payload['variants']} variants ({video_payload['strategy']})"
-            f" across {', '.join(video_payload['axes'])}"
+            f" across {', '.join(video_axes)}"
         )
     output.line(f"  capabilities     {', '.join(capabilities)}")
     for note in plan_splits.notes:

@@ -47,7 +47,8 @@ all = [
 vidliner = "vidliner.cli.main:app"
 
 [project.urls]
-Documentation = "https://example.invalid/vidliner/docs"
+Repository = "https://github.com/Vidliner/vidliner"
+Documentation = "https://github.com/Vidliner/vidliner/tree/main/docs"
 
 [tool.setuptools.packages.find]
 include = ["vidliner*"]
@@ -105,4 +106,3 @@ known-first-party = ["vidliner"]
 # Type checking is performed by `ty` (see [tool.ty.*] above). `mypy` is not configured because its
 # numpy stubs require Python 3.12+ while the package targets 3.11; `ty` checks the same package
 # against the 3.11 language level and passes with no diagnostics.
-

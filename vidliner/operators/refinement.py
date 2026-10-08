@@ -62,6 +62,7 @@ class RefineCandidateOperator(Operator):
             stage=StageName.REFINE,
             summary="clean the mask, composite the generated region, and match colour and lighting",
             inputs={
+                "source_image": InputSpec(PortType.IMAGE_REF, "original frame for compositing"),
                 "item": InputSpec(PortType.INSTANCES, "the target object with its mask"),
                 "candidate": InputSpec(PortType.CANDIDATE_REF, "the generated candidate"),
                 "mask": InputSpec(PortType.MASK_REF, "the mask produced by segmentation", required=False),

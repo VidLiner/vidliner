@@ -191,6 +191,7 @@ export:
 | `vidliner inspect <dir>` | 报告媒体类型、尺寸、split 与标注覆盖率。 |
 | `vidliner recipe validate\|schema\|init\|show` | 处理 recipe。 |
 | `vidliner plan <recipe>` | 编译并估算开销。**不会调用任何生成 backend。** |
+| `vidliner workflow export\|validate\|schema\|catalog\|preview` | 导出与校验类型化工作流画布，离线预览计划。 |
 | `vidliner run <recipe>` | 执行、评估、导出。`--dry-run` 在生成前停止。 |
 | `vidliner jobs` | 列出 job 及其计数器与通过率。 |
 | `vidliner job show\|resume\|cancel` | 查看、恢复或取消 job。 |
@@ -279,6 +280,7 @@ vidliner plan examples/car-swap/car-swap.yaml
 | `docs/zh/quality.md` | 指标、门槛、决策与 reason code。 |
 | `docs/zh/datasets.md` | split、lineage、去重与数据集报告。 |
 | `docs/zh/testing.md` | 测试布局与合成 fixture。 |
+| `docs/zh/workflow.md` | 画布交换、算子面板与交互式离线预览。 |
 | `docs/zh/design/` | 架构决策记录、领域模型、DAG 设计、各类 schema、里程碑。 |
 | `examples/README.zh-CN.md` | 可运行的端到端示例说明。 |
 
@@ -289,6 +291,9 @@ vidliner plan examples/car-swap/car-swap.yaml
 ## 当前状态
 
 MVP 已端到端实现图片流水线：ingest、detection、segmentation、scene analysis、planning、candidate generation、refinement、**生成后重新检测与重新分割**、quality evaluation、annotation regeneration、acceptance、dataset export、job state、resume、cache、CLI 与报告。验证记录见 `docs/zh/design/milestones.md`。
+
+编译后的计划还可导出为带版本的工作流画布，对照算子注册表校验，并通过离线 HTML 页面搜索、
+平移、缩放及查看节点详情。使用方式见[工作流画布交换](docs/zh/workflow.md)。
 
 **刻意尚未实现**（但扩展点已就位）：视频替换与跟踪（`ObjectTrack`、`FrameRef`、`temporal_consistency` 已在数据模型中）、分布式 worker、对象存储、Web 复核界面。任何未实现的功能都会 `raise NotImplementedError` 或抛出明确的能力错误，而不是假装成功。
 

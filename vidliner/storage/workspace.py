@@ -47,7 +47,7 @@ import json
 import os
 import shutil
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -211,7 +211,7 @@ class Workspace:
             return path.as_posix()
 
     @contextmanager
-    def scratch(self, prefix: str = "vidliner-") -> Iterator[Path]:
+    def scratch(self, prefix: str = "vidliner-") -> Generator[Path, None, None]:
         """A temporary directory inside the workspace cache, removed on exit."""
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         path = Path(tempfile.mkdtemp(prefix=prefix, dir=self.cache_dir))

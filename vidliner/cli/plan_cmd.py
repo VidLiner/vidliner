@@ -48,15 +48,17 @@ def plan_command(
     # operator learns the dataset would not be training data before paying for candidates.
     verdict = assess_production_readiness(session.registry, plan.resolution.as_mapping())
     video_payload: dict[str, object] | None = None
+    video_axes: list[str] = []
     if loaded.video is not None:
         from vidliner.domain.video import enumerate_video_variants
 
         variants = enumerate_video_variants(loaded.video)
+        video_axes = sorted({operator.axis for operator in loaded.video.operators})
         video_payload = {
             "id": loaded.video.id,
             "strategy": loaded.video.strategy,
             "variants": len(variants),
-            "axes": sorted({operator.axis for operator in loaded.video.operators}),
+            "axes": video_axes,
         }
     payload = {
         "job_id": plan.job_plan.job_id,
@@ -116,7 +118,7 @@ def plan_command(
     if video_payload is not None:
         output.line(
             f"video      {video_payload['variants']} variants ({video_payload['strategy']})"
-            f" across {', '.join(video_payload['axes'])}"
+            f" across {', '.join(video_axes)}"
         )
     output.line(
         f"external   {estimate.external_calls} call(s)  accelerator ops {estimate.accelerator_operations}"

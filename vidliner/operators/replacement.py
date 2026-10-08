@@ -59,6 +59,9 @@ class GenerateReplacementOperator(Operator):
             stage=StageName.GENERATE,
             summary="produce one replacement candidate image for one target object",
             inputs={
+                "source_image": InputSpec(
+                    PortType.IMAGE_REF, "source frame to edit (sample context fallback)", required=False
+                ),
                 "item": InputSpec(PortType.INSTANCES, "the segmented target object"),
                 "plan": InputSpec(PortType.PLAN, "the replacement plan for this object"),
             },
