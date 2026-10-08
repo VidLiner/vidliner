@@ -1,0 +1,47 @@
+# Configuration example only: no provider call is made by loading/checking this profile.
+# Select ONE binding below. Model-specific request parameters belong to the workflow node.
+profile: video-ai
+backends:
+  runway:
+    use: vidliner.backends.http_video:HttpVideoGenerationBackend
+    options:
+      provider: runway
+      model_id: gen4.5
+      modes: [text-to-video, image-to-video]
+    credentials:
+      api_key: {source: env, name: RUNWAYML_API_SECRET}
+    capacity: {limit: 2, period_s: 2}
+    estimates: {external: true}
+  kling:
+    use: vidliner.backends.http_video:HttpVideoGenerationBackend
+    options:
+      provider: fal
+      model_id: fal-ai/kling-video/v2.5-turbo/pro/image-to-video
+      modes: [image-to-video]
+      seed_field: null
+    credentials:
+      api_key: {source: env, name: FAL_KEY}
+    capacity: {limit: 2, period_s: 2}
+    estimates: {external: true}
+  wan:
+    use: vidliner.backends.http_video:HttpVideoGenerationBackend
+    options:
+      provider: fal
+      model_id: fal-ai/wan/v2.2-a14b/text-to-video
+      modes: [text-to-video]
+    credentials:
+      api_key: {source: env, name: FAL_KEY}
+    capacity: {limit: 2, period_s: 2}
+    estimates: {external: true}
+  veo:
+    use: vidliner.backends.http_video:HttpVideoGenerationBackend
+    options:
+      provider: fal
+      model_id: fal-ai/veo3.1
+      modes: [text-to-video]
+    credentials:
+      api_key: {source: env, name: FAL_KEY}
+    capacity: {limit: 2, period_s: 2}
+    estimates: {external: true}
+bindings:
+  generation.video_generation.v1: wan

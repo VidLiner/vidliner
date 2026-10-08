@@ -81,7 +81,7 @@ document.getElementById('edit').onclick=()=>{document.body.classList.toggle('edi
 document.getElementById('download').onclick=()=>{const blob=new Blob([JSON.stringify(doc,null,2)+'\n'],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='vidliner-workflow.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
 document.getElementById('resetConfig').onclick=()=>{if(selected)select(selected);};
 document.getElementById('applyConfig').onclick=()=>{if(!selected)return;try{const value=JSON.parse(document.getElementById('config').value);if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Configuration must be a JSON object');
-selected.config=value;select(selected);document.getElementById('status').textContent='Modified draft · validation pending';}catch(error){document.getElementById('configError').textContent=error.message;}};
+selected.config=value;doc.recipe_hash=null;doc.capability_bindings={};doc.unmet_capabilities=[];select(selected);document.getElementById('status').textContent='Modified draft · validation pending';}catch(error){document.getElementById('configError').textContent=error.message;}};
 svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();zoom(e.deltaY<0?1.1:1/1.1,e.clientX-r.left,e.clientY-r.top);},{passive:false});
 let drag=null;svg.addEventListener('pointerdown',e=>{if(e.target.closest('.node')||e.button!==0)return;drag={x:e.clientX,y:e.clientY,ox,oy};svg.setPointerCapture(e.pointerId);});
 svg.addEventListener('pointermove',e=>{if(drag){ox=drag.ox+e.clientX-drag.x;oy=drag.oy+e.clientY-drag.y;draw();}});

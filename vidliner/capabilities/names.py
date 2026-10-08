@@ -32,6 +32,7 @@ __all__ = [
     "CAP_QUALITY_VLM",
     "CAP_SCENE_ANALYSIS",
     "CAP_TRACKING",
+    "CAP_VIDEO_GENERATION",
     "CAP_VIDEO_REPLACEMENT",
     "KNOWN_CAPABILITIES",
     "PRODUCTION_CAPABILITIES",
@@ -59,6 +60,7 @@ CAP_IMAGE_COMPOSITING: Final = "generation.image_compositing.v1"
 CAP_IMAGE_HARMONIZATION: Final = "generation.image_harmonization.v1"
 CAP_MASK_REFINEMENT: Final = "generation.mask_refinement.v1"
 CAP_VIDEO_REPLACEMENT: Final = "generation.video_replacement.v1"
+CAP_VIDEO_GENERATION: Final = "generation.video_generation.v1"
 
 # --- quality ----------------------------------------------------------------
 CAP_QUALITY_SEMANTIC: Final = "quality.semantic_match.v1"
@@ -82,6 +84,7 @@ CAPABILITY_GROUPS: Final[dict[str, tuple[str, ...]]] = {
         CAP_IMAGE_HARMONIZATION,
         CAP_MASK_REFINEMENT,
         CAP_VIDEO_REPLACEMENT,
+        CAP_VIDEO_GENERATION,
     ),
     "quality": (
         CAP_QUALITY_SEMANTIC,
@@ -140,6 +143,7 @@ _DESCRIPTIONS: Final[dict[str, str]] = {
     CAP_IMAGE_HARMONIZATION: "match colour and illumination between a generated region and its surroundings",
     CAP_MASK_REFINEMENT: "clean and feather a mask edge",
     CAP_VIDEO_REPLACEMENT: "generate a temporally consistent replacement across frames",
+    CAP_VIDEO_GENERATION: "submit, query and cancel an asynchronous video generation task",
     CAP_QUALITY_SEMANTIC: "judge whether a generated object matches the requested category",
     CAP_QUALITY_BACKGROUND: "measure whether non-target pixels were preserved",
     CAP_QUALITY_ARTIFACT: "detect visible artifacts in a generated image",

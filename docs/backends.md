@@ -23,6 +23,7 @@ change.
 | `generation.image_harmonization.v1` | `harmonize` | the refine stage |
 | `generation.mask_refinement.v1` | `refine_mask` | the refine stage |
 | `generation.video_replacement.v1` | — | reserved (video) |
+| `generation.video_generation.v1` | `submit`, `status`, `cancel` | asynchronous video task nodes |
 | `quality.semantic_match.v1` | `assess_semantics` | the evaluate stage |
 | `quality.background_preservation.v1` | — | **built-in**: measured in-house, never bound |
 | `quality.artifact_detection.v1` | `evaluate` | the evaluate stage |
@@ -30,6 +31,9 @@ change.
 | `quality.embedding.v1` | `embed` | duplicate control |
 
 `vidliner backend list --capabilities` prints this list with a one-line description of each.
+
+Video task adapters reuse this registry and credential contract. See
+[video and canvas integrations](video-integrations.md) for Runway/fal configuration and host hooks.
 
 Most capabilities are served by a backend. One is not: `quality.background_preservation.v1` is
 measured by the pipeline itself in `vidliner/quality/metrics.py`, because "did the non-target pixels

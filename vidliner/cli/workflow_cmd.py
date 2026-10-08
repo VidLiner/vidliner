@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -9,6 +10,7 @@ import typer
 from vidliner.cli.common import Output, fail, resolve_workspace
 from vidliner.core.errors import ErrorCode, ValidationFailure
 from vidliner.domain.workflow import WorkflowDocument
+from vidliner.domain.workflow_edit import WorkflowEditRequest
 from vidliner.pipeline.service import Session, load_recipe
 from vidliner.pipeline.workflow import (
     graph_from_workflow,
@@ -16,9 +18,55 @@ from vidliner.pipeline.workflow import (
     operator_catalogue,
     workflow_from_graph,
 )
+from vidliner.pipeline.workflow_edit import apply_workflow_edits, workflow_digest
+from vidliner.pipeline.workflow_execution import WorkflowExecutionRequest
 from vidliner.reports.workflow import render_workflow
 
 app = typer.Typer(no_args_is_help=True)
+
+
+@app.command("digest")
+def digest_command(document_path: Path) -> None:
+    """Return the reviewed draft identity used by edit and execution requests."""
+    try:
+        typer.echo(workflow_digest(load_workflow(document_path)))
+    except ValidationFailure as exc:
+        raise typer.Exit(fail(exc)) from exc
+
+
+@app.command("patch")
+def patch_command(
+    document_path: Path,
+    patch_path: Path,
+    output_path: Path = typer.Option(..., "--output", "-o"),
+    force: bool = typer.Option(False, "--force"),
+) -> None:
+    """Apply an atomic typed graph edit batch and validate the complete postimage."""
+    try:
+        original = load_workflow(document_path)
+        patch = WorkflowEditRequest.model_validate_json(patch_path.read_text(encoding="utf-8"))
+        result = apply_workflow_edits(original, patch)
+        _write(output_path, result.model_dump_json(indent=2) + "\n", force=force)
+    except (OSError, ValueError, ValidationFailure) as exc:
+        error = (
+            exc
+            if isinstance(exc, ValidationFailure)
+            else ValidationFailure(str(exc), code=ErrorCode.GRAPH_INVALID)
+        )
+        raise typer.Exit(fail(error)) from exc
+    typer.echo(f"workflow draft written to {output_path}")
+
+
+@app.command("edit-schema")
+def edit_schema_command() -> None:
+    """JSON Schema for frontend structural editing transactions."""
+    typer.echo(json.dumps(WorkflowEditRequest.model_json_schema(), indent=2))
+
+
+@app.command("execution-schema")
+def execution_schema_command() -> None:
+    """JSON Schema for an authenticated execution host's reviewed request."""
+    typer.echo(json.dumps(WorkflowExecutionRequest.model_json_schema(), indent=2))
 
 
 def _write(path: Path, content: str, *, force: bool) -> None:

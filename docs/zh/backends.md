@@ -21,6 +21,7 @@
 | `generation.image_harmonization.v1` | `harmonize` | refine |
 | `generation.mask_refinement.v1` | `refine_mask` | refine |
 | `generation.video_replacement.v1` | — | 预留（视频） |
+| `generation.video_generation.v1` | `submit`、`status`、`cancel` | 异步视频任务节点 |
 | `quality.semantic_match.v1` | `assess_semantics` | evaluate |
 | `quality.background_preservation.v1` | — | **内置**：由流水线自行测量，永不绑定 |
 | `quality.artifact_detection.v1` | `evaluate` | evaluate |
@@ -28,6 +29,9 @@
 | `quality.embedding.v1` | `embed` | 去重 |
 
 `vidliner backend list --capabilities` 会打印完整清单及每项的一句话说明。
+
+视频任务适配器复用本注册表和凭据契约，Runway/fal 配置及宿主接入见
+[视频与画布接口说明](video-integrations.md)。
 
 绝大多数能力由 backend 提供，只有一项例外：`quality.background_preservation.v1` 是流水线在 `vidliner/quality/metrics.py` 中自己做的确定性像素比较（"非目标像素是否变化"是像素比对，不是模型判断）。它留在词汇表里是因为 recipe 的验收门槛会引用它，但 profile **不得绑定**它，`vidliner backend check` 会把它报告为 `builtin`。
 

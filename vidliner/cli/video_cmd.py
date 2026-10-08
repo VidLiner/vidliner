@@ -10,10 +10,23 @@ import typer
 from vidliner.cli.common import Output, fail
 from vidliner.core.errors import ErrorCode, ValidationFailure
 from vidliner.domain.video import VideoAugmentSpec, enumerate_video_variants
+from vidliner.domain.video_generation import VideoGenerationRequest, VideoTask
 from vidliner.reports.video import render_video_review
 from vidliner.video.render import generate_variants, probe_video, render_variant
 
 app = typer.Typer(no_args_is_help=True)
+
+
+@app.command("request-schema")
+def request_schema_command() -> None:
+    """Provider-neutral AI generation request schema for integration hosts."""
+    typer.echo(json.dumps(VideoGenerationRequest.model_json_schema(), indent=2))
+
+
+@app.command("task-schema")
+def task_schema_command() -> None:
+    """Durable asynchronous video task handle schema."""
+    typer.echo(json.dumps(VideoTask.model_json_schema(), indent=2))
 
 
 @app.command("preview")

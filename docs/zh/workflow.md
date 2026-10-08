@@ -69,5 +69,6 @@ restored_graph = graph_from_workflow(document)
 画布文档是图快照，不能替代 recipe 的数据集及验收策略，也没有独立执行命令。
 
 `video probe/generate/render` 已支持 FFmpeg 本地变体渲染，尚未接入画布执行。
-图结构编辑、媒体资产浏览、实时任务状态及服务端仍待实现。
+图结构编辑手势、媒体资产浏览、实时任务状态界面及服务端仍待实现。
+图结构修改事务与画布执行宿主接口已预留，详见[视频与画布接口说明](video-integrations.md)。
 [Toonflow 借鉴评估](../design/toonflow-assessment.md) 说明了选型依据及后续方向。

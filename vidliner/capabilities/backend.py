@@ -33,6 +33,7 @@ from vidliner.domain.replacement import (
 from vidliner.domain.scene import SceneContext
 from vidliner.domain.shapes import ImageShape
 from vidliner.domain.tracks import ObjectTrack
+from vidliner.domain.video_generation import VideoGenerationRequest, VideoTask
 
 __all__ = [
     "ArtifactIO",
@@ -73,6 +74,7 @@ __all__ = [
     "TrackingResult",
     "VLMRequest",
     "VLMResponse",
+    "VideoGenerationBackend",
     "VisionEvaluationBackend",
 ]
 
@@ -118,6 +120,21 @@ class ArtifactIO(Protocol):
     def store(self) -> Any:
         """The underlying artifact store, for the few backends that need catalogue access."""
         ...
+
+
+@runtime_checkable
+class VideoGenerationBackend(Protocol):
+    """Asynchronous vendor adapter; submit is unsafe to retry unless separately proven.
+
+    Status and cancellation accept a durable handle, so polling never resubmits a paid intent.
+    Cancellation is a request, not a promise that an already running provider job stops.
+    """
+
+    async def submit(self, request: VideoGenerationRequest, context: PipelineContext) -> VideoTask: ...
+
+    async def status(self, task: VideoTask, context: PipelineContext) -> VideoTask: ...
+
+    async def cancel(self, task: VideoTask, context: PipelineContext) -> VideoTask: ...
 
 
 class BackendHealth(str):

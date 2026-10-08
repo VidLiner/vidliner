@@ -23,7 +23,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from vidliner.core.errors import ErrorCode, InfrastructureFailure, OperatorFailure, VidlinerError
-from vidliner.core.graph import NodeOutput, OperationNode, SampleSource
+from vidliner.core.graph import ArtifactSource, NodeOutput, OperationNode, SampleSource
 from vidliner.core.results import ArtifactRef, NodeResult, PortValue, utc_now
 from vidliner.core.seedtree import derive_seed
 from vidliner.domain.enums import NodeStatus
@@ -116,6 +116,7 @@ class ArtifactExecutor:
         sample_for: Callable[[OperationNode], SampleContext | None] | None = None,
         on_event: Callable[[str, OperationNode, dict[str, Any]], None] | None = None,
         ports: PortState | None = None,
+        artifact_inputs: Mapping[str, Any] | None = None,
     ) -> None:
         self._job_id = job_id
         self._store = store
@@ -123,6 +124,7 @@ class ArtifactExecutor:
         self._sample_for = sample_for
         self._on_event = on_event
         self._ports = ports or PortState()
+        self._artifact_inputs = dict(artifact_inputs or {})
 
     @property
     def ports(self) -> PortState:
@@ -233,6 +235,12 @@ class ArtifactExecutor:
                 resolved[port] = self._select(node, port, self._ports.get(binding.node_id, binding.port))
             elif isinstance(binding, SampleSource):
                 continue  # sample values are injected through the execution context
+            elif isinstance(binding, ArtifactSource):
+                if binding.role not in self._artifact_inputs:
+                    raise OperatorFailure(
+                        f"job-level input {binding.role!r} was not supplied", code=ErrorCode.PORT_UNBOUND
+                    )
+                resolved[port] = self._artifact_inputs[binding.role]
             else:
                 resolved[port] = getattr(binding, "value", None)
         return resolved

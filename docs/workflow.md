@@ -78,6 +78,7 @@ execution remains `vidliner run recipe.yaml`. The document is a graph snapshot, 
 for the recipe's dataset and acceptance policy. It has no standalone execution command.
 
 Local video rendering is available through `video probe/generate/render`; it is not yet wired to
-canvas execution. Structural graph editing, media asset browsing, live job status and an authenticated
-server remain future work. See the [Toonflow assessment](design/toonflow-assessment.md) for the
+canvas execution. Graph editing gestures, media asset browsing, live job status UI and an authenticated
+server remain future work. Typed structural edit transactions and an execution-host factory are
+available in [video and canvas integration contracts](video-integrations.md). See the [Toonflow assessment](design/toonflow-assessment.md) for the
 design rationale and the relationship to the existing video planner and Rust kernels.

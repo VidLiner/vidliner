@@ -81,3 +81,7 @@ keep the source, rendered outputs, and HTML at the same relative locations. If s
 serve their common parent directory. Playback clocks are independent because variants may run at
 different speeds. Time mappings are continuous mappings; frame sampling adds up to one frame of
 quantization and still requires temporal verification.
+
+AI video task adapters and canvas integration hooks reuse the runtime capability interfaces; see
+[video integration contracts](../video-integrations.md). Ordinary model generation uses
+`generation.video_generation.v1`, distinct from the stricter video object-replacement contract.

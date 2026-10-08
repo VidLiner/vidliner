@@ -25,11 +25,14 @@ from vidliner.domain.quality import AcceptanceDecision, GateOutcome, QualityRepo
 from vidliner.domain.replacement import ReplacementCandidate, ReplacementPlan
 from vidliner.domain.scene import SceneContext
 from vidliner.domain.shapes import BoundingBox
+from vidliner.domain.video import ContrastPair, VideoVariant
+from vidliner.domain.video_generation import VideoTask
 
 __all__ = ["TAG_MAP", "decode_value", "encode_value"]
 
 #: Runtime classes that may cross a graph edge, keyed by the tag stored in the JSON form.
 TAG_MAP: dict[str, type[BaseModel]] = {
+    "video-task": VideoTask,
     "annotation-bundle": AnnotationBundle,
     "artifact-ref": ArtifactRef,
     "bbox": BoundingBox,
@@ -48,6 +51,8 @@ TAG_MAP: dict[str, type[BaseModel]] = {
 }
 
 _OBJECT_LIST_TAGS: dict[str, type[BaseModel]] = {
+    "video-variants": VideoVariant,
+    "contrast-pairs": ContrastPair,
     "instances": ObjectInstance,
     "object-items": ObjectItem,
     "plan-list": ReplacementPlan,
