@@ -73,12 +73,12 @@ not arbitrary Python objects. Node order is normalized to the graph's topologica
 
 ## Scope
 
-This release provides canvas interchange, a typed palette, and offline plan inspection and editing. Recipe
+This release provides canvas interchange, a typed palette, offline inspection and a local editable execution host. Recipe
 execution remains `vidliner run recipe.yaml`. The document is a graph snapshot, not a replacement
-for the recipe's dataset and acceptance policy. It has no standalone execution command.
+for the recipe's dataset and acceptance policy. `workflow serve` can execute supported graphs locally.
 
 Local video rendering is available through `video probe/generate/render`; it is not yet wired to
-canvas execution. Graph editing gestures, media asset browsing, live job status UI and an authenticated
-server remain future work. Typed structural edit transactions and an execution-host factory are
+canvas execution. Media asset browsing and public multi-user hosting remain future work.
+Local graph editing gestures, job status, video playback, structural edit transactions and an execution-host factory are
 available in [video and canvas integration contracts](video-integrations.md). See the [Toonflow assessment](design/toonflow-assessment.md) for the
 design rationale and the relationship to the existing video planner and Rust kernels.

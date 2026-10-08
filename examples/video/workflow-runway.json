@@ -1,0 +1,20 @@
+{
+  "schema_version": "vidliner.workflow/v1",
+  "name": "Runway video generation",
+  "nodes": [
+    {
+      "id": "submit", "operator": "video.submit", "operator_version": "1.0.0", "stage": "generate",
+      "config": {"request": {"prompt": "A quiet mountain lake at sunrise, gentle camera movement, natural light", "seed": 42, "parameters": {"duration": 5, "ratio": "1280:720"}}},
+      "outputs": {"task": "video_task"}, "needs": ["generation.video_generation.v1"],
+      "determinism": "nondeterministic", "cacheable": false, "timeout_s": 90,
+      "position": {"x": 64, "y": 80}
+    },
+    {
+      "id": "status", "operator": "video.status", "operator_version": "1.0.0", "stage": "generate",
+      "config": {}, "outputs": {"task": "video_task"}, "needs": ["generation.video_generation.v1"],
+      "determinism": "nondeterministic", "cacheable": false, "timeout_s": 150,
+      "position": {"x": 424, "y": 80}
+    }
+  ],
+  "edges": [{"source": "submit", "source_port": "task", "target": "status", "target_port": "task"}]
+}

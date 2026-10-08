@@ -8,7 +8,7 @@ from pathlib import Path
 import typer
 
 from vidliner.cli.common import Output, fail, resolve_workspace
-from vidliner.core.errors import ErrorCode, ValidationFailure
+from vidliner.core.errors import ErrorCode, ValidationFailure, VidlinerError
 from vidliner.domain.workflow import WorkflowDocument
 from vidliner.domain.workflow_edit import WorkflowEditRequest
 from vidliner.pipeline.service import Session, load_recipe
@@ -23,6 +23,42 @@ from vidliner.pipeline.workflow_execution import WorkflowExecutionRequest
 from vidliner.reports.workflow import render_workflow
 
 app = typer.Typer(no_args_is_help=True)
+
+
+@app.command("serve")
+def serve_command(
+    path: Path = typer.Argument(..., help="Initial workflow JSON; saved drafts live in the workspace."),
+    workspace: Path = typer.Option(..., "--workspace"),
+    runtime: Path | None = typer.Option(None, "--runtime"),
+    port: int = typer.Option(8767, "--port", min=1, max=65535),
+    allow_external: bool = typer.Option(
+        False, "--allow-external", help="Authorize provider calls using this runtime."
+    ),
+) -> None:
+    """Serve a local editable canvas with execution, remote task progress and video playback."""
+    from vidliner.web.server import CanvasHTTPServer
+
+    server = None
+    try:
+        server = CanvasHTTPServer(
+            path, workspace, runtime_path=runtime, port=port, allow_external=allow_external
+        )
+        typer.echo(
+            f"VidLiner canvas: {server.origin} · external generation {'enabled' if allow_external else 'disabled'}"
+        )
+        server.serve_forever()
+    except KeyboardInterrupt:
+        typer.echo("Canvas host stopped; saved jobs are retained.")
+    except (OSError, VidlinerError) as exc:
+        error = (
+            exc
+            if isinstance(exc, ValidationFailure)
+            else ValidationFailure("cannot open canvas host", code=ErrorCode.GRAPH_INVALID)
+        )
+        raise typer.Exit(fail(error)) from exc
+    finally:
+        if server is not None:
+            server.server_close()
 
 
 @app.command("digest")

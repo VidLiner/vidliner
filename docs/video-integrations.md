@@ -1,8 +1,8 @@
 # Video and canvas integration contracts
 
-These are library and CLI integration boundaries for an authenticated UI host. The standalone
-HTML editor remains offline: no browser-supplied endpoint, credential, or execute button can start
-a provider call. A host can add transport routes without creating a second graph or scheduler.
+Library and CLI integration contracts also power a loopback web application. `workflow preview`
+remains offline; `workflow serve` adds saved structural edits, execution and live video tasks,
+using the same graph, scheduler and backend registry. Credentials remain in the host runtime.
 
 ## Video models
 
@@ -101,7 +101,8 @@ vidliner workflow validate edited.json
 The host must atomically compare and replace its stored document using `expected_digest` to prevent
 concurrent writers losing edits. The library computes/validates immutable postimages; it does not
 claim a database transaction or multi-process file CAS. The offline editor currently edits layout
-and config; a graphical node palette and connection gestures can consume these typed edit requests.
+and config. The hosted editor consumes these transactions for its node palette, port dragging,
+keyboard connections and edge removal; SQLite implements draft compare-and-replace.
 
 ## Canvas execution host
 
@@ -139,5 +140,63 @@ are disabled by this interface to avoid silently reusing stale status or repeati
 Canvas execution returns node evidence. Export-stage nodes are refused; training data still goes
 through the recipe service's acceptance, production-backend and export policy. Source-context
 injection reuses `SampleContext`; job-level inputs reuse `ArtifactSource` and the artifact executor.
-No HTTP server, direct browser execution, native Sora/Vertex/DashScope adapter, result downloader or
-graph-gesture UI is included in this slice; each can connect at these public boundaries.
+Native Sora/Vertex/DashScope adapters and result downloading remain extension points.
+
+## Local web application
+
+```sh
+vidliner workflow serve examples/video/workflow-canvas.json --workspace ./canvas-workspace
+```
+
+Open `http://127.0.0.1:8767`. `Execute` runs the initial provider-free planning node. Expand
+`Add an operator`, select a registered operator and supply its config. Drag output circles onto input
+circles, or focus an output and press Enter, then focus an input and press Enter. Click a connection
+and use `Remove connection`; selected nodes support `Remove node`. Unwired required inputs are
+saved as artifact-role placeholders, so the graph remains structurally valid but execution fails
+preflight until real inputs are supplied or connected. The local host does not inject dataset sample
+contexts or external artifacts; use an embedding host for these inputs. Editing config/layout saves
+automatically; `Save JSON` exports a portable copy. The source JSON is never overwritten.
+
+The service binds only `127.0.0.1`. API requests require its per-process token and matching Host/Origin;
+tokens stay in the page and credentials are never exposed. No CORS access is granted. External
+execution is off by default and can only be enabled by the CLI host. It is a local, single-process
+application, not a multi-user deployment or public authentication service. Use one server per
+workspace/draft state. The one-MiB JSON API cap bounds commands. Private SQLite state is saved under
+the workspace cache directory with owner-only permissions; preserve it to retain handles and deduplication.
+
+Execution IDs are uniquely claimed before running. Repeating the same intent returns its saved job;
+reusing an ID with changed draft/runtime/seed is refused. Nodes and remote task handles are persisted.
+Restarting the server marks incomplete jobs interrupted and never resubmits them. The UI shows the
+latest saved job; `Refresh task` queries a saved handle, and `Cancel task` requests remote cancellation.
+`Cancel job` stops local scheduling and requests cancellation of its saved remote handles. Cancellation
+acknowledgement does not prove the provider stopped. A crash/timeout before receiving a handle may leave
+an unknown remote submission; never regenerate automatically to reconcile that uncertainty.
+
+The host polls pending tasks at five-second intervals for at most ten minutes. Multiple lifecycle
+nodes sharing a handle are polled once per task. After timeout, the job waits for explicit refresh/cancel.
+Generation results appear as HTML video players using provider URLs, without forwarding credentials
+or downloading media. Signed URLs may expire; results remain unverified training media.
+
+## Runway live verification
+
+Install `vidliner[http]`, provide `RUNWAYML_API_SECRET` to the host process, or configure the existing
+file credential source in a private copy of [runtime-runway.yaml](../examples/video/runtime-runway.yaml).
+The example uses a five-second Gen-4.5 text-to-video request. Generation is a real provider operation
+and uses account credits; loading a profile or inspecting the canvas does not submit it.
+
+```sh
+vidliner workflow serve examples/video/workflow-runway.json \
+  --workspace ./runway-workspace --runtime examples/video/runtime-runway.yaml --allow-external
+
+# Or submit one live verification with persisted evidence and bounded polling:
+vidliner video verify examples/video/request-runway.json \
+  --workspace ./runway-verification --runtime examples/video/runtime-runway.yaml \
+  --job-id runway-smoke-001 --timeout 600
+```
+
+`video verify` uses the same host, request and adapter as the web canvas. A repeated `--job-id`
+only refreshes its saved task, never resubmits it. Exit 0 means provider success; exit 2 means
+validation failure, generation failure, interruption or pending state. Default output gives an
+evidence database path; `--json` includes private task handles and result URLs. The command proves
+provider/task connectivity and completion, not visual quality or training acceptance. Automated
+tests use unbilled HTTP fixtures. A live success may only be claimed after an actual terminal result.

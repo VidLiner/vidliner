@@ -305,6 +305,8 @@ AI 视频接入已复用 runtime 能力绑定，提供 Runway 与 fal 异步任�
 画布图结构编辑使用类型化原子事务，直接执行的宿主接口复用原 DAG 和调度器。
 模型配置、授权边界和接入示例见[接口说明](docs/zh/video-integrations.md)；提供了
 [`runtime-ai.yaml`](examples/video/runtime-ai.yaml) 的 Runway、Kling、Wan、Veo 配置示例。
+`workflow serve` 已支持本地网页增删节点、拖拽连线、直接执行及视频进度/播放；
+`video verify` 可执行一次真实生成验证，保存任务证据并有界轮询。
 
 **刻意尚未实现**（但扩展点已就位）：视频替换与跟踪（`ObjectTrack`、`FrameRef`、`temporal_consistency` 已在数据模型中）、分布式 worker、对象存储、Web 复核界面。任何未实现的功能都会 `raise NotImplementedError` 或抛出明确的能力错误，而不是假装成功。
 

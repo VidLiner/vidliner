@@ -1,0 +1,15 @@
+/* Host controls extend the offline canvas's existing dark teal design. */
+body{height:100vh;display:flex;flex-direction:column}header,.toolbar{flex:none}main{flex:1;height:auto;min-height:0}aside{min-height:0}
+.host-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}
+select{font:inherit;color:inherit;background:#162238;border:1px solid #354863;border-radius:7px;padding:8px;max-width:100%}
+button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible{outline:2px solid #57dbc9;outline-offset:2px}
+#execute{background:#23594f}#jobPanel{border-top:1px solid #354863;margin-top:16px;padding-top:12px}
+#jobPanel video{width:100%;margin-top:12px;background:#0c1423}#jobPanel p{overflow-wrap:anywhere}
+.port{cursor:crosshair;fill:#152338;stroke:#57dbc9;stroke-width:2}.port:focus,.port.chosen{fill:#57dbc9;stroke:#fff;outline:none}
+.edge{cursor:pointer;stroke-width:3}.edge:focus,.edge.chosen{stroke:#57dbc9;stroke-width:5;outline:none}
+.wire{stroke:#57dbc9;stroke-width:2;fill:none;stroke-dasharray:6 4;pointer-events:none}
+.run-state{fill:#57dbc9;font-size:10px}.host-note{width:100%;margin:0;color:#98abc8;font-size:12px}
+#palette{border:1px solid #354863;padding:12px;margin-top:12px}#palette summary{cursor:pointer}
+#palette label{display:block;margin:12px 0 4px}#palette textarea{min-height:120px}
+#seed{width:85px}#hostError{color:#f2aeae;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:760px){.toolbar{padding:12px}main{height:auto}#canvas{height:55vh}header{padding:16px 12px}}

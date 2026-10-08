@@ -331,6 +331,8 @@ AI video integration reuses runtime capability bindings with Runway and fal task
 Typed structural-edit transactions and a canvas execution-host interface reuse the existing DAG and
 scheduler. See [integration contracts](docs/video-integrations.md) for model configuration, authorization,
 and the distinction between a completed generation task and verified training data.
+`workflow serve` opens a local canvas with node creation, port dragging, execution and video progress;
+`video verify` performs one real provider generation with persisted task evidence and bounded polling.
 
 Deliberately **not** implemented yet, with the extension points already in place: video replacement
 and tracking (`ObjectTrack`, `FrameRef`, and `temporal_consistency` exist in the data model),

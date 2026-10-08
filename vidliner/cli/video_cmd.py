@@ -2,19 +2,102 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import re
+import uuid
 from pathlib import Path
 
 import typer
 
 from vidliner.cli.common import Output, fail
-from vidliner.core.errors import ErrorCode, ValidationFailure
+from vidliner.core.errors import ErrorCode, ValidationFailure, VidlinerError
 from vidliner.domain.video import VideoAugmentSpec, enumerate_video_variants
 from vidliner.domain.video_generation import VideoGenerationRequest, VideoTask
 from vidliner.reports.video import render_video_review
 from vidliner.video.render import generate_variants, probe_video, render_variant
 
 app = typer.Typer(no_args_is_help=True)
+
+
+@app.command("verify")
+def verify_command(
+    request_path: Path = typer.Argument(
+        ..., help="VideoGenerationRequest JSON; submits one real provider task."
+    ),
+    workspace: Path = typer.Option(..., "--workspace"),
+    runtime: Path = typer.Option(..., "--runtime"),
+    backend: str | None = typer.Option(None, "--backend", help="Choose a configured video backend."),
+    job_id: str = typer.Option(
+        "", "--job-id", help="Reuse this ID to query saved intent without resubmission."
+    ),
+    timeout: int = typer.Option(600, "--timeout", min=1, max=3600),
+    json_mode: bool = typer.Option(False, "--json", help="Include private task handles and result URLs."),
+) -> None:
+    """Perform bounded live generation verification using the same durable canvas host."""
+    from vidliner.capabilities.names import CAP_VIDEO_GENERATION
+    from vidliner.domain.workflow import WorkflowDocument
+    from vidliner.pipeline.canvas_host import CanvasHost
+    from vidliner.pipeline.service import Session
+    from vidliner.pipeline.workflow_edit import new_workflow_node
+    from vidliner.runtime.profile import RuntimeProfile
+
+    output = Output(json_mode=json_mode)
+    job_id = job_id or "verify-" + uuid.uuid4().hex
+    if not re.fullmatch(r"[a-zA-Z0-9_-]{1,80}", job_id):
+        raise typer.Exit(fail(ValidationFailure("invalid verification job id", code=ErrorCode.GRAPH_INVALID)))
+
+    async def verify() -> tuple[dict, str]:
+        request = VideoGenerationRequest.model_validate_json(request_path.read_text(encoding="utf-8"))
+        session = Session.open(workspace, runtime_path=runtime, create=True)
+        if backend is not None:
+            mapping = session.profile.model_dump(mode="python")
+            mapping["bindings"] = {**mapping["bindings"], CAP_VIDEO_GENERATION: backend}
+            session = Session(session.workspace, RuntimeProfile.model_validate(mapping))
+        document = WorkflowDocument(
+            name="Live video verification",
+            nodes=(
+                new_workflow_node(
+                    "video.submit", "submit", config={"request": request.model_dump(mode="json")}
+                ),
+            ),
+        )
+        state_path = session.workspace.cache_dir / f"video-{job_id}.db"
+        host = CanvasHost(session, document, state_path, allow_external=True, poll_timeout_s=timeout)
+        try:
+            await host.execute({"job_id": job_id, "expected_digest": host.draft()["digest"]})
+            runner = host.runners.get(job_id)
+            if runner is not None:
+                await runner
+            else:
+                # A repeated CLI request only queries persisted handles; it cannot recreate intent.
+                for node_id in host.store.job(job_id)["tasks"]:
+                    await host.task_action(job_id, node_id, "status")
+            return host.store.job(job_id), str(state_path)
+        finally:
+            await host.close()
+
+    try:
+        result, state_path = asyncio.run(verify())
+    except (OSError, ValueError, VidlinerError) as exc:
+        error = (
+            exc
+            if isinstance(exc, VidlinerError)
+            else ValidationFailure("invalid video verification input", code=ErrorCode.GRAPH_INVALID)
+        )
+        raise typer.Exit(fail(error, output=output)) from exc
+    output.payload(
+        {
+            "job_id": job_id,
+            "status": result["status"],
+            "state_path": state_path,
+            "tasks": result["tasks"],
+            "nodes": result["nodes"],
+        },
+        fallback=f"{job_id}: {result['status']} · evidence: {state_path}",
+    )
+    if result["status"] != "succeeded":
+        raise typer.Exit(2)
 
 
 @app.command("request-schema")

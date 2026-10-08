@@ -2,15 +2,27 @@
 
 from __future__ import annotations
 
+import json
+from importlib.resources import files
+
 from vidliner.domain.workflow import WorkflowDocument
 
 
-def render_workflow(document: WorkflowDocument) -> str:
+def render_workflow(document: WorkflowDocument, *, host_config: dict | None = None) -> str:
     """Embed inert JSON; all document strings enter the DOM through textContent."""
     payload = (
         document.model_dump_json().replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
     )
-    return _TEMPLATE.replace("__WORKFLOW_JSON__", payload)
+    html = _TEMPLATE.replace("__WORKFLOW_JSON__", payload)
+    if host_config is not None:
+        boot = json.dumps(host_config).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+        script = files("vidliner.web").joinpath("canvas.js").read_text(encoding="utf-8")
+        style = files("vidliner.web").joinpath("canvas.css").read_text(encoding="utf-8")
+        html = html.replace(
+            "</body>",
+            f'<style>{style}</style><script type="application/json" id="host">{boot}</script><script>{script}</script></body>',
+        )
+    return html
 
 
 _TEMPLATE = r"""<!doctype html>

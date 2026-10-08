@@ -1,0 +1,12 @@
+{
+  "schema_version": "vidliner.workflow/v1",
+  "name": "VidLiner video canvas",
+  "nodes": [{
+    "id": "plan", "operator": "video.plan_variants", "operator_version": "1.0.0", "stage": "plan",
+    "config": {"spec": {"id": "canvas", "seed": 42, "operators": [{"name": "format.reframe", "axis": "format", "domains": {"aspect": ["1:1"]}}]}},
+    "outputs": {"variants": "video_variants", "pairs": "contrast_pairs"},
+    "needs": [], "determinism": "deterministic", "cacheable": true,
+    "position": {"x": 64, "y": 64}, "timeout_s": 30, "max_parallelism": 8,
+    "description": "Plan deterministic video variants without a provider call"
+  }]
+}

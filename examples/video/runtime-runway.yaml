@@ -1,0 +1,14 @@
+profile: video-runway
+backends:
+  runway:
+    use: vidliner.backends.http_video:HttpVideoGenerationBackend
+    options:
+      provider: runway
+      model_id: gen4.5
+      modes: [text-to-video, image-to-video]
+    credentials:
+      api_key: {source: env, name: RUNWAYML_API_SECRET}
+    capacity: {limit: 2, period_s: 2}
+    estimates: {external: true}
+bindings:
+  generation.video_generation.v1: runway
