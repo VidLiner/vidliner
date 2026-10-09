@@ -1,0 +1,15 @@
+profile: video-bifrost
+backends:
+  bifrost:
+    use: vidliner.backends.http_video:HttpVideoGenerationBackend
+    options:
+      provider: bifrost
+      base_url: http://127.0.0.1:8080
+      model_id: runway/gen4.5
+      modes: [text-to-video, image-to-video]
+    credentials:
+      api_key: {source: env, name: BIFROST_API_KEY}
+    capacity: {limit: 2, period_s: 2}
+    estimates: {external: true}
+bindings:
+  generation.video_generation.v1: bifrost

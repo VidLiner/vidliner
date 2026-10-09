@@ -25,7 +25,7 @@ from vidliner.runtime.secrets import CredentialResolver
 class VideoHttpOptions(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
-    provider: Literal["fal", "runway"]
+    provider: Literal["bifrost", "fal", "runway"]
     model_id: str = Field(min_length=1)
     base_url: str | None = None
     modes: tuple[Literal["text-to-video", "image-to-video", "video-to-video"], ...] = ("text-to-video",)
@@ -46,6 +46,8 @@ class VideoHttpOptions(BaseModel):
         fields = (
             ["promptText", "promptImage", self.video_field]
             if self.provider == "runway"
+            else ["prompt", "input_reference", "video_uri"]
+            if self.provider == "bifrost"
             else [self.prompt_field, self.image_field, self.video_field]
         )
         if self.seed_field is not None:
@@ -73,7 +75,11 @@ class HttpVideoGenerationBackend(LocalBackend):
     def __init__(self, spec: Any, options: dict[str, Any], credentials: Any = None) -> None:
         super().__init__(spec, options, credentials)
         self.config = VideoHttpOptions.model_validate(options)
-        default = "https://queue.fal.run" if self.config.provider == "fal" else "https://api.dev.runwayml.com"
+        default = {
+            "bifrost": "http://127.0.0.1:8080",
+            "fal": "https://queue.fal.run",
+            "runway": "https://api.dev.runwayml.com",
+        }[self.config.provider]
         self.base = (self.config.base_url or default).rstrip("/")
         parsed = urlparse(self.base)
         if (
@@ -127,6 +133,8 @@ class HttpVideoGenerationBackend(LocalBackend):
         return key
 
     def _headers(self) -> dict[str, str]:
+        if self.config.provider == "bifrost":
+            return {"Authorization": f"Bearer {self._key()}"}
         if self.config.provider == "fal":
             return {"Authorization": f"Key {self._key()}", "X-Fal-No-Retry": "1"}
         return {"Authorization": f"Bearer {self._key()}", "X-Runway-Version": self.config.runway_version}
@@ -211,6 +219,49 @@ class HttpVideoGenerationBackend(LocalBackend):
                 backend_id=self.backend_id,
                 code=ErrorCode.VIDEO_NOT_SUPPORTED,
             )
+        if self.config.provider == "bifrost":
+            reserved = {"model", "prompt", "input_reference", "video_uri"}
+            if self.config.seed_field:
+                reserved.add(self.config.seed_field)
+            if reserved.intersection(request.parameters):
+                raise BackendFailure(
+                    "parameters must not override core generation fields",
+                    backend_id=self.backend_id,
+                    code=ErrorCode.VIDEO_NOT_SUPPORTED,
+                )
+            payload = dict(request.parameters)
+            payload["model"] = self.config.model_id
+            payload["prompt"] = request.prompt
+            if request.seed is not None:
+                if self.config.seed_field is None:
+                    raise BackendFailure(
+                        "this model does not support a seed field",
+                        backend_id=self.backend_id,
+                        code=ErrorCode.VIDEO_NOT_SUPPORTED,
+                    )
+                payload[self.config.seed_field] = request.seed
+            if request.image is not None:
+                if request.image.media_type not in {"image/png", "image/jpeg", "image/webp"}:
+                    raise BackendFailure(
+                        "source artifact must be an image",
+                        backend_id=self.backend_id,
+                        code=ErrorCode.VIDEO_NOT_SUPPORTED,
+                    )
+                data = context.require_io().load(request.image)
+                if len(data) > self.config.max_image_mb * 1024 * 1024:
+                    raise BackendFailure(
+                        "source image exceeds inline upload cap",
+                        backend_id=self.backend_id,
+                        code=ErrorCode.BACKEND_RESPONSE_TOO_LARGE,
+                    )
+                payload["input_reference"] = f"data:{request.image.media_type};base64," + base64.b64encode(
+                    data
+                ).decode("ascii")
+            elif request.image_url is not None:
+                payload["input_reference"] = str(request.image_url)
+            if request.video_url is not None:
+                payload["video_uri"] = str(request.video_url)
+            return payload
         runway = self.config.provider == "runway"
         prompt_field = "promptText" if runway else self.config.prompt_field
         image_field = "promptImage" if runway else self.config.image_field
@@ -273,6 +324,8 @@ class HttpVideoGenerationBackend(LocalBackend):
             raise BackendFailure(
                 "invalid provider task id", backend_id=self.backend_id, code=ErrorCode.BACKEND_REQUEST_FAILED
             )
+        if self.config.provider == "bifrost":
+            return f"{self.base}/v1/videos/{task.task_id}{suffix}"
         if self.config.provider == "runway":
             return f"{self.base}/v1/tasks/{task.task_id}"
         parsed = urlparse(str(url))
@@ -299,7 +352,9 @@ class HttpVideoGenerationBackend(LocalBackend):
     async def submit(self, request: VideoGenerationRequest, context: PipelineContext) -> VideoTask:
         """Submit one intent and validate its durable control handle without polling."""
         payload = self._payload(request, context)
-        if self.config.provider == "fal":
+        if self.config.provider == "bifrost":
+            endpoint = self.base + "/v1/videos"
+        elif self.config.provider == "fal":
             endpoint = self.base + "/" + quote(self.config.model_id, safe="/")
         else:
             endpoint = self.base + (
@@ -307,6 +362,20 @@ class HttpVideoGenerationBackend(LocalBackend):
             )
         document = await self._json("POST", endpoint, payload)
         try:
+            if self.config.provider == "bifrost":
+                task_id = str(document["id"])
+                task = VideoTask(
+                    backend_id=self.backend_id,
+                    model_id=self.config.model_id,
+                    task_id=task_id,
+                    status_url=f"{self.base}/v1/videos/{task_id}",
+                    result_url=f"{self.base}/v1/videos/{task_id}/content",
+                    cancel_url=f"{self.base}/v1/videos/{task_id}",
+                )
+                self._task_url(task, task.status_url)
+                self._task_url(task, task.result_url)
+                self._task_url(task, task.cancel_url)
+                return task
             if self.config.provider == "fal":
                 task = VideoTask(
                     backend_id=self.backend_id,
@@ -336,9 +405,15 @@ class HttpVideoGenerationBackend(LocalBackend):
     async def status(self, task: VideoTask, context: PipelineContext) -> VideoTask:
         """Read current state and obtain video URLs only after provider success."""
         del context
-        url = self._task_url(task, task.status_url, "/status")
+        suffix = "" if self.config.provider == "bifrost" else "/status"
+        url = self._task_url(task, task.status_url, suffix)
         document = await self._json("GET", url)
         mapping = {
+            "queued": "queued",
+            "in_progress": "running",
+            "completed": "succeeded",
+            "failed": "failed",
+            "cancelled": "cancelled",
             "IN_QUEUE": "queued",
             "IN_PROGRESS": "running",
             "COMPLETED": "succeeded",
@@ -352,8 +427,22 @@ class HttpVideoGenerationBackend(LocalBackend):
         state = mapping.get(str(document.get("status")), "unknown")
         outputs: object = ()
         code = document.get("failureCode")
+        if self.config.provider == "bifrost" and isinstance(document.get("error"), dict):
+            code = document["error"].get("code") or document["error"].get("message")
         if state == "succeeded":
-            if self.config.provider == "fal":
+            if self.config.provider == "bifrost":
+                outputs = [
+                    item.get("url")
+                    for item in document.get("videos", [])
+                    if isinstance(item, dict) and isinstance(item.get("url"), str)
+                ]
+                if not outputs:
+                    raise BackendFailure(
+                        "successful task has no video outputs",
+                        backend_id=self.backend_id,
+                        code=ErrorCode.BACKEND_REQUEST_FAILED,
+                    )
+            elif self.config.provider == "fal":
                 if document.get("error"):
                     state, code = "failed", str(document.get("error_type") or "provider_error")
                 else:
@@ -384,6 +473,7 @@ class HttpVideoGenerationBackend(LocalBackend):
         current = await self.status(task, context)
         if current.terminal:
             return current  # Runway DELETE also deletes finished tasks; never delete completed evidence.
-        url = self._task_url(task, task.cancel_url, "/cancel")
+        suffix = "" if self.config.provider == "bifrost" else "/cancel"
+        url = self._task_url(task, task.cancel_url, suffix)
         await self._json("PUT" if self.config.provider == "fal" else "DELETE", url)
         return current  # Cancellation acknowledgement is not a terminal-state guarantee.

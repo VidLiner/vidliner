@@ -124,6 +124,47 @@ async def test_runway_payload_status_and_cancellation_204(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_bifrost_openai_video_lifecycle(monkeypatch):
+    calls = []
+
+    def handle(request):
+        calls.append((request.method, request.url.path))
+        assert request.headers["Authorization"] == "Bearer test-secret-never-log"
+        if request.method == "POST":
+            assert json.loads(request.content) == {
+                "prompt": "a landscape",
+                "model": "gen4.5",
+                "duration": 5,
+            }
+            return httpx.Response(200, json={"id": "video-1", "status": "queued"})
+        if request.method == "DELETE":
+            return httpx.Response(204)
+        return httpx.Response(
+            200,
+            json={
+                "id": "video-1",
+                "status": "completed",
+                "videos": [{"type": "url", "url": "https://media.example/video.mp4"}],
+            },
+        )
+
+    mock_http(monkeypatch, handle)
+    adapter = backend("bifrost", base_url="http://bifrost.example")
+    task = await adapter.submit(
+        VideoGenerationRequest(prompt="a landscape", parameters={"duration": 5}), CONTEXT
+    )
+    current = await adapter.status(task, CONTEXT)
+    assert current.status == "succeeded"
+    assert str(current.output_urls[0]) == "https://media.example/video.mp4"
+    assert (await adapter.cancel(task, CONTEXT)).status == "succeeded"
+    assert calls == [
+        ("POST", "/v1/videos"),
+        ("GET", "/v1/videos/video-1"),
+        ("GET", "/v1/videos/video-1"),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_completed_runway_task_is_never_deleted(monkeypatch):
     def handle(request):
         assert request.method == "GET"

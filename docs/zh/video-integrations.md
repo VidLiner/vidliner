@@ -8,7 +8,10 @@ AI 视频复用现有 `RuntimeProfile`、`BackendRegistry`、`CapabilityBroker`�
 新增 `generation.video_generation.v1` 能力，以及 `video.submit`、`video.status`、`video.cancel`
 节点。请求与任务句柄有独立 JSON Schema；提交、查询、取消分开执行，不在提交超时后自动重试。
 
-已有适配器支持 Runway 原生文生/图生视频和 fal 队列协议；示例包含 Runway Gen-4.5、Kling、Wan、Veo。
+已有适配器支持 Runway 原生文生/图生视频、fal 队列协议，以及 Bifrost 的 OpenAI 兼容视频网关；示例包含 Runway Gen-4.5、Kling、Wan、Veo。
+
+Bifrost 是 API 网关，不是本地模型运行时。可复制 `examples/video/runtime-bifrost.yaml`，设置 `BIFROST_API_KEY`，并把
+`model_id` 写成网关可解析的模型标识。VidLiner 只调用 `/v1/videos` 及其任务查询/删除接口，网关负责供应商路由、回退和供应商密钥。
 时长、分辨率、音频等模型参数保留供应商的数据类型，通过 `parameters` 传入。新增原生服务或本地模型
 可以按 `VideoGenerationBackend` 协议实现适配器，通过 runtime 的 `use` 导入，无需另建调度器。
 这些路径已使用模拟 HTTP 响应测试，尚未进行真实模型付费生成验证。

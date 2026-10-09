@@ -235,7 +235,7 @@ class CanvasHost:
         if node_id not in snapshot["tasks"]:
             raise ValidationFailure("unknown task node", code=ErrorCode.GRAPH_INVALID)
         task = VideoTask.model_validate(snapshot["tasks"][node_id])
-        if not self.allow_external:
+        if method == "cancel" and not self.allow_external:
             raise ValidationFailure(
                 "external task actions are disabled", code=ErrorCode.BACKEND_REQUEST_FAILED
             )

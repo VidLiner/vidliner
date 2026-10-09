@@ -53,7 +53,9 @@ def verify_command(
         if backend is not None:
             mapping = session.profile.model_dump(mode="python")
             mapping["bindings"] = {**mapping["bindings"], CAP_VIDEO_GENERATION: backend}
-            session = Session(session.workspace, RuntimeProfile.model_validate(mapping))
+            profile = RuntimeProfile.model_validate(mapping)
+            session.close()
+            session = Session(session.workspace, profile)
         document = WorkflowDocument(
             name="Live video verification",
             nodes=(

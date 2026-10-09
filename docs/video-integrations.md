@@ -17,7 +17,8 @@ implements the existing minimum `Backend` contract plus `VideoGenerationBackend`
 | `cancel(task, context)` | Persisted `VideoTask` | Cancel request; provider may still finish. |
 | `probe()` | No generation input | Configuration/credential readiness, no paid call. |
 
-`HttpVideoGenerationBackend` supports Runway text/image generation and fal's queue API. The
+`HttpVideoGenerationBackend` supports Runway text/image generation, fal's queue API, and the
+[Bifrost](https://github.com/maximhq/bifrost) OpenAI-compatible video gateway. The
 [example runtime](../examples/video/runtime-ai.yaml) includes Runway Gen-4.5, Kling, Wan and Veo
 configurations. Provider endpoints and model parameters were checked against official docs;
 integration tests use HTTP fixtures. They are not a claim of live generation with every model,
@@ -26,6 +27,7 @@ account entitlement, model quality or production acceptance.
 | Route | Configuration | Official protocol/schema |
 | --- | --- | --- |
 | Runway native API | `provider: runway`, model ID, enabled modes | [Task lifecycle](https://docs.dev.runwayml.com/ai-context.md), [OpenAPI](https://docs.dev.runwayml.com/openapi.json) |
+| Bifrost video gateway | `provider: bifrost`, gateway origin, model ID, enabled modes | [`POST /v1/videos`](https://github.com/maximhq/bifrost), `GET/DELETE /v1/videos/{id}` |
 | Kling via fal | `provider: fal`, Kling endpoint, image mode | [Kling schema](https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video/api) |
 | Wan via fal | `provider: fal`, Wan endpoint, text mode | [Wan schema](https://fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video/api) |
 | Veo via fal | `provider: fal`, Veo endpoint, text mode | [Veo schema](https://fal.ai/models/fal-ai/veo3.1/api) |
@@ -48,6 +50,11 @@ URLs must match the configured provider origin, model route and task ID; credent
 sent to returned media URLs. Responses are streamed with a byte cap and redirects are refused.
 Output URLs may expire and may contain signed access parameters: treat task handles as private
 runtime state. A future asset-import host must separately download, validate and store media.
+
+Bifrost is an API gateway, not a local model runtime. Configure it with the
+`runtime-bifrost.yaml` example and keep its gateway key in `BIFROST_API_KEY`; the gateway then
+owns provider routing, fallbacks and provider credentials. VidLiner only sends the provider-neutral
+`/v1/videos` request and persists the returned Bifrost video ID for later retrieval or cancellation.
 
 `VideoTask.verified` is always false, and its label transform defaults to `synthesized`. An output
 URL is not a digest-addressed artifact or verified training sample. The existing
