@@ -133,7 +133,8 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header(
             "Content-Security-Policy",
             "default-src 'none'; script-src 'unsafe-inline'; "
-            "style-src 'unsafe-inline'; connect-src 'self'; media-src http: https: blob:; "
+            "style-src 'unsafe-inline'; connect-src 'self' https://api.github.com/repos/VidLiner/vidliner; "
+            "media-src http: https: blob:; "
             "frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
         )
         self.end_headers()

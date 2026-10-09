@@ -5,6 +5,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/VidLiner/vidliner/stargazers"><img src="https://img.shields.io/github/stars/VidLiner/vidliner?style=flat&amp;logo=github&amp;label=Stars" alt="GitHub Stars" /></a>
+  <a href="https://www.star-history.com/#VidLiner/vidliner&amp;Date">Star history</a>
+</p>
+
+<p align="center">
   <strong>Generate. Verify. Rebuild labels. Export evidence.</strong><br />
   <sub>Early alpha · Verified image pipeline · Local video rendering and workflow editing</sub>
 </p>
@@ -12,6 +17,10 @@
 **Object-centric synthetic data augmentation with mandatory verification.**
 
 [简体中文](./README.zh-CN.md)
+
+If VidLiner helps your work, [star the repository](https://github.com/VidLiner/vidliner).
+The badge shows the latest available GitHub count; [Star History](https://www.star-history.com/#VidLiner/vidliner&Date)
+tracks its growth over time. A new repository may have no history to display yet.
 
 VidLiner turns images you already have into *verified* training samples. It finds a target object,
 replaces it, **re-detects and re-segments the object in the generated image**, proves the rest of the
@@ -339,6 +348,10 @@ Deliberately **not** implemented yet, with the extension points already in place
 and tracking (`ObjectTrack`, `FrameRef`, and `temporal_consistency` exist in the data model),
 distributed workers, object storage, and a web review UI. Anything unimplemented raises
 `NotImplementedError` or an explicit capability error rather than pretending to succeed.
+
+## Star history
+
+[![VidLiner Star History](https://api.star-history.com/svg?repos=VidLiner/vidliner&type=Date)](https://www.star-history.com/#VidLiner/vidliner&Date)
 
 ## License
 

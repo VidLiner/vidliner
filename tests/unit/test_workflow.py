@@ -169,6 +169,15 @@ def test_preview_keeps_document_strings_inert(graph: OperationGraph) -> None:
     assert "https://" not in html
 
 
+def test_preview_embeds_complete_localization_runtime(graph: OperationGraph) -> None:
+    html = render_workflow(workflow_from_graph(graph, name="locale"))
+    assert '<script type="application/json" id="locales">' in html
+    assert all(f'"{locale}"' in html for locale in ("en-US", "zh-CN", "ja-JP", "ko-KR", "es-ES"))
+    assert "VidLinerI18n" in html
+    assert 'id="localeSelect"' in html
+    assert all(f'value="{locale}"' in html for locale in ("en-US", "zh-CN", "ja-JP", "ko-KR", "es-ES"))
+
+
 def test_catalogue_includes_video_and_verification_schemas() -> None:
     catalogue = {spec["operator"]: spec for spec in operator_catalogue()}
     assert "video.plan_variants" in catalogue

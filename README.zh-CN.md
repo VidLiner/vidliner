@@ -5,11 +5,20 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/VidLiner/vidliner/stargazers"><img src="https://img.shields.io/github/stars/VidLiner/vidliner?style=flat&amp;logo=github&amp;label=Stars" alt="GitHub Star 数" /></a>
+  <a href="https://www.star-history.com/#VidLiner/vidliner&amp;Date">Star 历史记录</a>
+</p>
+
+<p align="center">
   <strong>生成。验证。重建标签。导出证据。</strong><br />
   <sub>早期 Alpha · 图像流水线 MVP · 视频变体规划已接入</sub>
 </p>
 
 [English](./README.md)
+
+如果 VidLiner 对你有帮助，欢迎[为仓库点亮 Star](https://github.com/VidLiner/vidliner)。
+徽章展示 GitHub 最新可用的 Star 数；[Star History](https://www.star-history.com/#VidLiner/vidliner&Date)
+提供随时间变化的历史记录。新仓库可能暂时没有可展示的历史数据。
 
 **以对象为中心、强制验证的合成训练数据生产流水线。**
 
@@ -309,6 +318,10 @@ AI 视频接入已复用 runtime 能力绑定，提供 Runway、fal 与 Bifrost 
 `video verify` 可执行一次真实生成验证，保存任务证据并有界轮询。
 
 **刻意尚未实现**（但扩展点已就位）：视频替换与跟踪（`ObjectTrack`、`FrameRef`、`temporal_consistency` 已在数据模型中）、分布式 worker、对象存储、Web 复核界面。任何未实现的功能都会 `raise NotImplementedError` 或抛出明确的能力错误，而不是假装成功。
+
+## Star 历史记录
+
+[![VidLiner Star 历史记录](https://api.star-history.com/svg?repos=VidLiner/vidliner&type=Date)](https://www.star-history.com/#VidLiner/vidliner&Date)
 
 ## 许可
 

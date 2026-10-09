@@ -7,20 +7,39 @@ from importlib.resources import files
 
 from vidliner.domain.workflow import WorkflowDocument
 
+SUPPORTED_LOCALES = ("en-US", "zh-CN", "ja-JP", "ko-KR", "es-ES")
+
 
 def render_workflow(document: WorkflowDocument, *, host_config: dict | None = None) -> str:
     """Embed inert JSON; all document strings enter the DOM through textContent."""
     payload = (
         document.model_dump_json().replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
     )
-    html = _TEMPLATE.replace("__WORKFLOW_JSON__", payload)
+    web_files = files("vidliner.web")
+    locales = {
+        locale: json.loads(web_files.joinpath("locales", f"{locale}.json").read_text(encoding="utf-8"))
+        for locale in SUPPORTED_LOCALES
+    }
+    locale_payload = (
+        json.dumps(locales, ensure_ascii=False)
+        .replace("&", "\\u0026")
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+    )
+    i18n_script = web_files.joinpath("i18n.js").read_text(encoding="utf-8")
+    html = (
+        _TEMPLATE.replace("__WORKFLOW_JSON__", payload)
+        .replace("__LOCALES_JSON__", locale_payload)
+        .replace("__I18N_SCRIPT__", i18n_script)
+    )
     if host_config is not None:
         boot = json.dumps(host_config).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
-        script = files("vidliner.web").joinpath("canvas.js").read_text(encoding="utf-8")
-        style = files("vidliner.web").joinpath("canvas.css").read_text(encoding="utf-8")
+        script = web_files.joinpath("canvas.js").read_text(encoding="utf-8")
+        github_script = web_files.joinpath("github.js").read_text(encoding="utf-8")
+        style = web_files.joinpath("canvas.css").read_text(encoding="utf-8")
         html = html.replace(
             "</body>",
-            f'<style>{style}</style><script type="application/json" id="host">{boot}</script><script>{script}</script></body>',
+            f'<style>{style}</style><script type="application/json" id="host">{boot}</script><script>{script}</script><script>{github_script}</script></body>',
         )
     return html
 
@@ -41,22 +60,27 @@ svg:active{cursor:grabbing}aside{overflow:auto;background:var(--sand);border-lef
 @media(max-width:760px){header{height:64px;padding:0 16px}header span{display:none}.toolbar{padding:10px 14px}.toolbar input{flex:1;min-width:180px}main{grid-template-columns:minmax(0,1fr);height:auto}svg{height:58vh;min-height:360px}aside{border-left:0;border-top:1px solid var(--line);padding:20px}.toolbar button{min-height:42px}}
 </style></head><body>
 <header><strong>VIDLINER</strong><h1 id="name"></h1><span id="counts"></span></header>
-<div class="toolbar"><input id="search" aria-label="Search operators" placeholder="Find an operator or lineage…">
-<button id="fit">Fit route</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">-</button>
-<button id="edit">Edit layout</button><button id="download">Save JSON</button>
-<span class="hint" id="status">Plan snapshot · select a control point</span></div>
-<main><svg id="canvas" aria-label="Workflow route map"><defs><pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="#d8d2c5" stroke-opacity=".56"/></pattern></defs><rect width="100%" height="100%" fill="url(#grid)"/><g id="scene"></g></svg>
-<aside><h2 id="selection">Workflow</h2><p class="hint">Not executed · runtime bindings unverified</p>
-<section id="configEditor" hidden><label for="config">Configuration</label><textarea id="config" spellcheck="false"></textarea>
-<button id="applyConfig">Apply configuration</button><button id="resetConfig">Reset</button><p id="configError" role="alert"></p></section>
+<div class="toolbar"><input id="search" data-i18n-label="toolbar.searchLabel" data-i18n-placeholder="toolbar.search">
+<button id="fit" data-i18n="toolbar.fit"></button><button id="zoomIn" data-i18n="toolbar.zoomIn" data-i18n-label="toolbar.zoomIn">+</button><button id="zoomOut" data-i18n="toolbar.zoomOut" data-i18n-label="toolbar.zoomOut">-</button>
+<button id="edit" data-i18n="toolbar.edit"></button><button id="download" data-i18n="toolbar.save"></button>
+<span class="hint" id="status" data-i18n="status.planSnapshot"></span><label class="locale-label" for="localeSelect" data-i18n="toolbar.language"></label><select id="localeSelect" aria-label="Language"><option value="en-US">EN</option><option value="zh-CN">中文</option><option value="ja-JP">日本語</option><option value="ko-KR">한국어</option><option value="es-ES">Español</option></select></div>
+<main><svg id="canvas" data-i18n-label="toolbar.routeMap" aria-label="Workflow route map"><defs><pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="#d8d2c5" stroke-opacity=".56"/></pattern></defs><rect width="100%" height="100%" fill="url(#grid)"/><g id="scene"></g></svg>
+<aside><h2 id="selection" data-i18n="aside.workflow"></h2><p class="hint" data-i18n="aside.notExecuted"></p>
+<section id="configEditor" hidden><label for="config" data-i18n="aside.configuration"></label><textarea id="config" spellcheck="false"></textarea>
+<button id="applyConfig" data-i18n="aside.applyConfiguration"></button><button id="resetConfig" data-i18n="aside.reset"></button><p id="configError" role="alert"></p></section>
 <pre id="detail"></pre></aside></main>
+<script type="application/json" id="locales">__LOCALES_JSON__</script><script>__I18N_SCRIPT__</script>
 <script type="application/json" id="workflow">__WORKFLOW_JSON__</script>
 <script>
 const doc=JSON.parse(document.getElementById('workflow').textContent), svg=document.getElementById('canvas'), scene=document.getElementById('scene');
 document.title=doc.name+' · VidLiner'; document.getElementById('name').textContent=doc.name;
-document.getElementById('counts').textContent=doc.nodes.length+' nodes · '+doc.edges.length+' connections';
+const i18n=window.VidLinerI18n;
+i18n.init();
+function updateSummary(){document.getElementById('counts').textContent=i18n.t('counts',{nodes:new Intl.NumberFormat(i18n.locale()).format(doc.nodes.length),connections:new Intl.NumberFormat(i18n.locale()).format(doc.edges.length)});}
+updateSummary();
 document.getElementById('detail').textContent=JSON.stringify({recipe_hash:doc.recipe_hash,capability_bindings:doc.capability_bindings,unmet_capabilities:doc.unmet_capabilities},null,2);
 const ns='http://www.w3.org/2000/svg', index=new Map(doc.nodes.map(n=>[n.id,n])), groups=new Map(), paths=[];let selected=null;
+let statusKey='status.planSnapshot';
 function el(tag,attrs,parent,text){const e=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;parent.appendChild(e);return e;}
 const palette={generate:'#9848d8',verify:'#f1c84b',evaluate:'#7b8b7d',export:'#181b24',plan:'#6e7b70'};
 function edgePath(edge){const a=index.get(edge.source).position,b=index.get(edge.target).position;return `M ${a.x+256} ${a.y+48} C ${a.x+296} ${a.y+48}, ${b.x-40} ${b.y+48}, ${b.x} ${b.y+48}`;}
@@ -71,7 +95,7 @@ backend_hints:Object.fromEntries(n.needs.map(c=>[c,doc.capability_bindings[c]??'
 retry:n.retry,max_parallelism:n.max_parallelism,timeout_s:n.timeout_s,lineage:n.lineage,selects:n.selects},null,2);}
 for(const n of doc.nodes){const g=el('g',{transform:`translate(${n.position.x},${n.position.y})`,class:'node',tabindex:'0',role:'button','aria-label':n.operator},scene);
 el('rect',{width:256,height:96,rx:2,fill:'#fffdf7',stroke:palette[n.stage]??'#9aa69a','stroke-width':2},g);
-el('text',{x:16,y:25,fill:palette[n.stage]??'#6e7b70','font-size':11},g,n.stage.toUpperCase());
+el('text',{x:16,y:25,fill:palette[n.stage]??'#6e7b70','font-size':11,'data-stage':n.stage},g,i18n.t('stage.'+n.stage));
 el('text',{x:16,y:50,fill:'#181b24','font-size':14},g,n.operator.length>29?n.operator.slice(0,28)+'…':n.operator);
 el('text',{x:16,y:75,fill:'#6e7b70','font-size':11},g,n.id.length>32?n.id.slice(0,31)+'…':n.id);
 el('title',{},g,n.description||n.operator);g.addEventListener('click',()=>select(n));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n);}});groups.set(n.id,g);
@@ -85,11 +109,11 @@ ox=(rect.width-bounds.width*scale)/2-bounds.x*scale;oy=(rect.height-bounds.heigh
 function zoom(factor,x,y){const next=Math.min(4,Math.max(.02,scale*factor)),ratio=next/scale;ox=x-(x-ox)*ratio;oy=y-(y-oy)*ratio;scale=next;draw();}
 document.getElementById('fit').onclick=fit;document.getElementById('zoomIn').onclick=()=>zoom(1.25,svg.clientWidth/2,svg.clientHeight/2);
 document.getElementById('zoomOut').onclick=()=>zoom(.8,svg.clientWidth/2,svg.clientHeight/2);
-document.getElementById('edit').onclick=()=>{document.body.classList.toggle('editing');const active=document.body.classList.contains('editing');document.getElementById('edit').textContent=active?'Finish layout':'Edit layout';document.getElementById('status').textContent=active?'Edit mode · drag nodes, then save JSON':'Plan snapshot · select a node for ports and config';};
+document.getElementById('edit').onclick=()=>{document.body.classList.toggle('editing');const active=document.body.classList.contains('editing');statusKey=active?'status.editMode':'status.planSnapshot';document.getElementById('edit').textContent=i18n.t(active?'toolbar.finish':'toolbar.edit');document.getElementById('status').textContent=i18n.t(statusKey);};
 document.getElementById('download').onclick=()=>{const blob=new Blob([JSON.stringify(doc,null,2)+'\n'],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='vidliner-workflow.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);};
 document.getElementById('resetConfig').onclick=()=>{if(selected)select(selected);};
 document.getElementById('applyConfig').onclick=()=>{if(!selected)return;try{const value=JSON.parse(document.getElementById('config').value);if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Configuration must be a JSON object');
-selected.config=value;doc.recipe_hash=null;doc.capability_bindings={};doc.unmet_capabilities=[];select(selected);document.getElementById('status').textContent='Modified draft · validation pending';}catch(error){document.getElementById('configError').textContent=error.message;}};
+selected.config=value;doc.recipe_hash=null;doc.capability_bindings={};doc.unmet_capabilities=[];select(selected);statusKey='status.modifiedDraft';document.getElementById('status').textContent=i18n.t(statusKey);}catch(error){document.getElementById('configError').textContent=error.message||i18n.t('error.unknown');}};
 svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();zoom(e.deltaY<0?1.1:1/1.1,e.clientX-r.left,e.clientY-r.top);},{passive:false});
 let drag=null;svg.addEventListener('pointerdown',e=>{if(e.target.closest('.node')||e.button!==0)return;drag={x:e.clientX,y:e.clientY,ox,oy};svg.setPointerCapture(e.pointerId);});
 svg.addEventListener('pointermove',e=>{if(drag){ox=drag.ox+e.clientX-drag.x;oy=drag.oy+e.clientY-drag.y;draw();}});
@@ -98,4 +122,5 @@ document.getElementById('search').addEventListener('input',e=>{const q=e.target.
 for(const n of doc.nodes){const match=(n.operator+' '+n.id+' '+n.lineage.join('/')).toLowerCase().includes(q);groups.get(n.id).classList.toggle('muted',!match);if(match)matches.add(n.id);}
 for(const p of paths)p.element.classList.toggle('muted',!matches.has(p.edge.source)||!matches.has(p.edge.target));});
 window.addEventListener('resize',fit);fit();
+window.addEventListener('vidliner:locale-change',()=>{updateSummary();i18n.apply();for(const stage of scene.querySelectorAll('[data-stage]'))stage.textContent=i18n.t('stage.'+stage.dataset.stage);const active=document.body.classList.contains('editing');document.getElementById('edit').textContent=i18n.t(active?'toolbar.finish':'toolbar.edit');document.getElementById('selection').textContent=selected?selected.operator:i18n.t('aside.workflow');if(!document.getElementById('host'))document.getElementById('status').textContent=i18n.t(statusKey);});
 </script></body></html>"""

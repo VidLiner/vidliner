@@ -26,6 +26,19 @@ connected edges following the node. The selected node's configuration can be edi
 object. `Save JSON` downloads the draft; run `vidliner workflow validate` on it before using it.
 Browser JSON syntax checks do not replace operator schema validation. Editing does not run a model.
 
+### Localization
+
+The standalone and hosted canvas share bundled `en-US`, `zh-CN`, `ja-JP`, `ko-KR` and `es-ES`
+locale resources. Use the Language selector in the toolbar; the choice is stored in browser local
+storage and is restored on the next visit. The document's operator IDs, stage names in JSON, and API
+payloads remain stable across languages. Locale resources are embedded in the HTML, so switching
+languages works offline.
+
+The hosted canvas also links to the GitHub repository and its Star History. It reads the public
+GitHub Star count with a four-second timeout and a one-hour session cache. If GitHub is unreachable
+or rate-limited, the repository link remains available without showing a made-up count. This request
+uses no canvas token or provider credentials. Standalone previews make no GitHub requests.
+
 Export defaults to one sample to keep the first canvas manageable. `--limit 0` includes all
 augmentable samples. Neither export nor preview overwrites an existing file unless `--force`
 is supplied. Export discovers the dataset and resolves advertised bindings without instantiating

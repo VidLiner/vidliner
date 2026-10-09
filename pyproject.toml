@@ -55,7 +55,7 @@ include = ["vidliner*"]
 exclude = ["tests*", "examples*", "docs*"]
 
 [tool.setuptools.package-data]
-"vidliner.web" = ["*.js", "*.css"]
+"vidliner.web" = ["*.js", "*.css", "locales/*.json"]
 
 [tool.ty.environment]
 python-version = "3.11"

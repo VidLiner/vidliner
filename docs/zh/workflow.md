@@ -22,6 +22,17 @@ vidliner workflow preview workflow.json --output workflow.html
 后可编辑配置 JSON 对象。点击 `Save JSON` 下载草稿，再用 `workflow validate` 校验。
 浏览器只检查 JSON 基本形式，不替代算子 Schema 校验。
 
+### 本地化
+
+离线预览与 hosted 画布共用内置的 `en-US`、`zh-CN`、`ja-JP`、`ko-KR` 和 `es-ES` 资源。
+使用工具栏中的“语言”选择器即可切换；选择会写入浏览器 local storage，并在下次打开时恢复。
+文档中的算子 ID、JSON 阶段名和 API payload 在不同语言之间保持稳定。语言资源直接嵌入 HTML，
+因此离线页面也能切换语言。
+
+hosted 画布另提供 GitHub 仓库和 Star 历史记录入口。Star 数来自 GitHub 公开接口，设置四秒
+超时与一小时会话缓存；网络不可用或触发限流时只保留仓库链接，不显示虚构计数。请求不携带
+画布 token 或供应商凭据，离线预览不会请求 GitHub。
+
 导出默认只规划一个样本，`--limit 0` 包含全部可增强样本。已有输出文件需要 `--force` 才能
 覆盖。导出会发现数据集并解析声明的能力绑定，不实例化 backend；未绑定的能力仍会保留，
 方便查看尚不具备执行条件的计划。
