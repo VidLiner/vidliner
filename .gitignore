@@ -17,6 +17,7 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
+.impeccable/
 
 # VidLiner runtime output
 workspace/
@@ -35,3 +36,7 @@ runtime.local.yaml
 
 # Tool caches
 .ty/
+
+# AOCI agent host integration (machine-bound; do not commit)
+.codex/config.toml
+.codex/config.toml.backup.*

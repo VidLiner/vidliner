@@ -19,7 +19,7 @@ dom('label',paletteBox,'Node ID',{for:'newId'});dom('input',paletteBox,'',{id:'n
 dom('label',paletteBox,'Initial configuration JSON',{for:'newConfig'});dom('textarea',paletteBox,'',{id:'newConfig'});
 dom('button',paletteBox,'Add node',{id:'addNode'});
 const jobPanel=dom('section',document.querySelector('aside'),'',{id:'jobPanel','aria-live':'polite'});
-dom('h2',jobPanel,'Execution');dom('p',jobPanel,'No job yet',{id:'jobStatus'});const jobResults=dom('div',jobPanel,'',{id:'jobResults'});
+dom('h2',jobPanel,'Execution trace');dom('p',jobPanel,'No run yet',{id:'jobStatus',class:'job-status'});const jobResults=dom('div',jobPanel,'',{id:'jobResults'});
 
 async function api(path,payload){const response=await fetch(path,{method:payload===undefined?'GET':'POST',headers:{'X-Vidliner-Token':host.token,'Content-Type':'application/json'},body:payload===undefined?undefined:JSON.stringify(payload)});const value=await response.json();if(!response.ok)throw new Error(value.error||'Host request failed');return value;}
 function error(value){byId('hostError').textContent=value?.message||String(value||'');}
@@ -32,15 +32,15 @@ function redrawGraph(){scene.replaceChildren();index.clear();groups.clear();path
  for(const edge of doc.edges){const path=el('path',{d:edgePath(edge),class:'edge',tabindex:0,role:'button','aria-label':`${edge.source}:${edge.source_port} to ${edge.target}:${edge.target_port}`},scene);paths.push({element:path,edge});const choose=()=>{chosenEdge=edge;for(const p of paths)p.element.classList.toggle('chosen',p.edge===edge);byId('removeEdge').disabled=false;};path.onpointerdown=e=>e.stopPropagation();path.onclick=choose;path.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};}
  for(const n of doc.nodes){const spec=specs.get(n.operator),height=124+Math.max(Object.keys(spec.inputs).length,Object.keys(n.outputs).length)*22;
   const g=el('g',{transform:`translate(${n.position.x},${n.position.y})`,class:'node',tabindex:0,role:'button','aria-label':n.operator+' '+n.id},scene);groups.set(n.id,g);
-  el('rect',{width:256,height,rx:8,fill:'#152338',stroke:palette[n.stage]||'#6584b0'},g);
-  el('text',{x:16,y:25,fill:palette[n.stage]||'#98abc8','font-size':11},g,n.stage.toUpperCase());
-  el('text',{x:16,y:50,fill:'#e3ebf7','font-size':14},g,n.operator);el('text',{x:16,y:75,fill:'#98abc8','font-size':11},g,n.id);
+  el('rect',{width:256,height,rx:2,fill:'#fffdf7',stroke:palette[n.stage]||'#9aa69a','stroke-width':2},g);
+  el('text',{x:16,y:25,fill:palette[n.stage]||'#6e7b70','font-size':11},g,n.stage.toUpperCase());
+  el('text',{x:16,y:50,fill:'#181b24','font-size':14},g,n.operator);el('text',{x:16,y:75,fill:'#6e7b70','font-size':11},g,n.id);
   el('text',{x:150,y:25,class:'run-state','data-state':n.id},g,'');
   g.onclick=e=>{if(e.target.classList.contains('port'))return;select(n);byId('removeNode').disabled=false;};
   g.onkeydown=e=>{if(e.target!==g)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n);byId('removeNode').disabled=false;}};
   for(const direction of ['input','output']){const entries=Object.entries(direction==='output'?n.outputs:spec.inputs);
    for(const [port,binding] of entries){const y=portY(n,port,direction),x=direction==='output'?256:0,type=direction==='output'?binding:binding.type;
-    el('text',{x:direction==='output'?242:14,y:y+4,fill:'#b9cbe4','font-size':10,'text-anchor':direction==='output'?'end':'start'},g,port);
+    el('text',{x:direction==='output'?242:14,y:y+4,fill:'#6e7b70','font-size':10,'text-anchor':direction==='output'?'end':'start'},g,port);
     const circle=el('circle',{cx:x,cy:y,r:6,class:'port',tabindex:0,role:'button','aria-label':`${direction} ${n.id}:${port} (${type})`,'data-direction':direction,'data-node':n.id,'data-port':port,'data-type':type},g);
     circle.onpointerdown=e=>{e.stopPropagation();if(direction==='output'){wireStart={node:n.id,port,type};svg.setPointerCapture(e.pointerId);}};
     circle.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();if(direction==='output'){wireStart={node:n.id,port,type};circle.classList.add('chosen');}else if(wireStart)connect(n.id,port,type);}};

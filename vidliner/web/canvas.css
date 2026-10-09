@@ -1,15 +1,16 @@
-/* Host controls extend the offline canvas's existing dark teal design. */
-body{height:100vh;display:flex;flex-direction:column}header,.toolbar{flex:none}main{flex:1;height:auto;min-height:0}aside{min-height:0}
-.host-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}
-select{font:inherit;color:inherit;background:#162238;border:1px solid #354863;border-radius:7px;padding:8px;max-width:100%}
-button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible{outline:2px solid #57dbc9;outline-offset:2px}
-#execute{background:#23594f}#jobPanel{border-top:1px solid #354863;margin-top:16px;padding-top:12px}
-#jobPanel video{width:100%;margin-top:12px;background:#0c1423}#jobPanel p{overflow-wrap:anywhere}
-.port{cursor:crosshair;fill:#152338;stroke:#57dbc9;stroke-width:2}.port:focus,.port.chosen{fill:#57dbc9;stroke:#fff;outline:none}
-.edge{cursor:pointer;stroke-width:3}.edge:focus,.edge.chosen{stroke:#57dbc9;stroke-width:5;outline:none}
-.wire{stroke:#57dbc9;stroke-width:2;fill:none;stroke-dasharray:6 4;pointer-events:none}
-.run-state{fill:#57dbc9;font-size:10px}.host-note{width:100%;margin:0;color:#98abc8;font-size:12px}
-#palette{border:1px solid #354863;padding:12px;margin-top:12px}#palette summary{cursor:pointer}
-#palette label{display:block;margin:12px 0 4px}#palette textarea{min-height:120px}
-#seed{width:85px}#hostError{color:#f2aeae;max-width:100%;overflow-wrap:anywhere}
-@media(max-width:760px){.toolbar{padding:12px}main{height:auto}#canvas{height:55vh}header{padding:16px 12px}}
+/* Hosted canvas: the route-map visual system extends the offline workflow surface. */
+body{height:100vh;display:flex;flex-direction:column;background:#f3f0e8}header,.toolbar{flex:none}main{flex:1;height:auto;min-height:0}aside{min-height:0}
+.host-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}.host-controls button{min-height:38px}.host-controls select{max-width:100%}
+.host-controls label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6e7b70;margin-left:4px}.host-controls input{width:82px}
+button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible{outline:3px solid rgba(152,72,216,.28);outline-offset:2px}
+#execute{background:#9848d8;border-color:#9848d8;color:#fff;font-weight:650}#execute:hover{background:#7c36b4;border-color:#7c36b4}
+#jobPanel{border-top:1px solid #c8c1b3;margin-top:22px;padding-top:18px}#jobPanel h2{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:#6e7b70;margin-bottom:10px}
+#jobPanel video{width:100%;margin-top:12px;background:#181b24;border:1px solid #c8c1b3}#jobPanel p{overflow-wrap:anywhere}.job-status{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.port{cursor:crosshair;fill:#fffdf7;stroke:#9848d8;stroke-width:2.5;vector-effect:non-scaling-stroke}.port:focus,.port.chosen{fill:#9848d8;stroke:#181b24;outline:none}
+.edge{cursor:pointer;stroke:#879487;stroke-width:2;vector-effect:non-scaling-stroke}.edge:focus,.edge.chosen{stroke:#9848d8;stroke-width:4;outline:none}.wire{stroke:#9848d8;stroke-width:2;fill:none;stroke-dasharray:7 5;pointer-events:none;vector-effect:non-scaling-stroke}
+.run-state{fill:#9848d8;font-size:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.host-note{width:100%;margin:0;color:#6e7b70;font-size:12px}.host-note:first-of-type{margin-top:2px}
+#palette{border:1px solid #c8c1b3;padding:14px;margin-top:18px;background:rgba(255,253,247,.55)}#palette summary{cursor:pointer;color:#181b24;font-weight:650}#palette label{display:block;margin:14px 0 5px;color:#6e7b70;font-size:11px;letter-spacing:.1em;text-transform:uppercase}#palette textarea{min-height:120px;background:#fffdf7}
+#seed{width:82px}#hostError{color:#9c3f3f;max-width:100%;overflow-wrap:anywhere;margin:0;font-size:12px}#status{font-size:12px;color:#6e7b70}
+.node rect{fill:#fffdf7;stroke:#9aa69a;transition:stroke .16s ease,fill .16s ease}.node text{font-family:ui-sans-serif,system-ui,sans-serif}.node text:nth-of-type(1){letter-spacing:.12em}.node.selected rect{stroke:#9848d8;stroke-width:3;fill:#fffaf0}.node .run-state{font-size:10px}.edge{transition:stroke .16s ease}button{transition:background-color .16s ease,border-color .16s ease,color .16s ease}
+@media(prefers-reduced-motion:reduce){.node rect,.edge,button{transition:none}}
+@media(max-width:760px){.toolbar{padding:10px 14px}.host-controls{gap:6px}main{height:auto}#canvas{height:58vh;min-height:360px}header{padding:0 16px}aside{padding:20px}.host-note{font-size:11px}}

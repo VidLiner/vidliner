@@ -29,28 +29,24 @@ _TEMPLATE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VidLiner · Workflow</title>
 <style>
-:root{color-scheme:dark;font:14px system-ui,sans-serif;background:#0c1423;color:#e3ebf7}
-*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;gap:18px;padding:18px 24px;border-bottom:1px solid #29354a}
-header strong{color:#57dbc9;letter-spacing:2px}h1{font-size:17px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-header span{margin-left:auto;color:#98abc8}.toolbar{display:flex;gap:8px;padding:12px 24px;align-items:center;flex-wrap:wrap}
-input,button,textarea{font:inherit;color:inherit;background:#162238;border:1px solid #354863;border-radius:7px;padding:8px 12px}
-textarea{width:100%;min-height:180px;resize:vertical;font:12px/1.6 ui-monospace,monospace}#configEditor[hidden]{display:none}#configError{color:#f2aeae}
-button{cursor:pointer}button:hover{border-color:#57dbc9}input{width:230px}main{display:grid;grid-template-columns:minmax(0,1fr) 340px;height:calc(100vh - 145px);min-height:320px}
-svg{width:100%;height:100%;touch-action:none;cursor:grab;background:radial-gradient(#263348 1px,transparent 1px);background-size:22px 22px}
-svg:active{cursor:grabbing}aside{overflow:auto;background:#111c2e;border-left:1px solid #29354a;padding:20px}
-h2{font-size:16px;color:#57dbc9}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;color:#b9cbe4}
-.hint{color:#98abc8;font-size:12px}.node{cursor:pointer}.node:focus{outline:none}.node:focus rect{stroke:#fff}
-.node.selected rect{stroke:#fff;stroke-width:3}.edge{fill:none;stroke:#435a7c;stroke-width:1.5}.muted{opacity:.15}
-.editing .node{cursor:move}.editing .node rect{stroke-dasharray:4 3}.editing #edit{border-color:#57dbc9;color:#57dbc9}
-@media(max-width:760px){main{grid-template-columns:minmax(0,1fr);height:auto}svg{height:55vh;min-height:320px}aside{border-left:0;border-top:1px solid #29354a}header span{display:none}}
+:root{color-scheme:light;font:14px/1.45 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f0e8;color:#181b24;--ink:#181b24;--paper:#fffdf7;--sand:#ece8dd;--line:#d8d2c5;--muted:#6e7b70;--route:#9848d8;--signal:#f1c84b;--quiet:#a8b5aa}
+*{box-sizing:border-box}body{margin:0;min-width:320px}header{height:72px;display:flex;align-items:center;gap:18px;padding:0 28px;background:var(--ink);color:var(--paper);border-bottom:4px solid var(--signal)}
+header strong{font-size:13px;letter-spacing:3px;color:var(--paper)}h1{font-size:16px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}header span{margin-left:auto;color:var(--quiet);font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+.toolbar{display:flex;gap:8px;padding:12px 24px;align-items:center;flex-wrap:wrap;background:var(--paper);border-bottom:1px solid var(--line)}
+input,button,textarea,select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid #bdb6a9;border-radius:2px;padding:9px 12px}textarea{width:100%;min-height:180px;resize:vertical;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}#configEditor[hidden]{display:none}#configError{color:#9c3f3f}
+button{cursor:pointer}button:hover{border-color:var(--route)}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid rgba(152,72,216,.28);outline-offset:2px}input{width:230px}main{display:grid;grid-template-columns:minmax(0,1fr) 360px;height:calc(100vh - 145px);min-height:420px}
+svg{width:100%;height:100%;touch-action:none;cursor:grab;background:var(--paper)}
+svg:active{cursor:grabbing}aside{overflow:auto;background:var(--sand);border-left:1px solid var(--line);padding:24px}h2{font-size:18px;line-height:1.2;margin:0 0 5px;color:var(--ink)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#3f4940;background:rgba(255,253,247,.72);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px;margin:16px 0 0}
+.hint{color:var(--muted);font-size:12px}.node{cursor:pointer}.node:focus{outline:none}.node:focus rect{stroke:var(--signal)}.node.selected rect{stroke:var(--route);stroke-width:3}.edge{fill:none;stroke:#8f9b8f;stroke-width:2}.muted{opacity:.18}.editing .node{cursor:move}.editing .node rect{stroke-dasharray:5 4}.editing #edit{border-color:var(--route);color:var(--route)}
+@media(max-width:760px){header{height:64px;padding:0 16px}header span{display:none}.toolbar{padding:10px 14px}.toolbar input{flex:1;min-width:180px}main{grid-template-columns:minmax(0,1fr);height:auto}svg{height:58vh;min-height:360px}aside{border-left:0;border-top:1px solid var(--line);padding:20px}.toolbar button{min-height:42px}}
 </style></head><body>
 <header><strong>VIDLINER</strong><h1 id="name"></h1><span id="counts"></span></header>
-<div class="toolbar"><input id="search" aria-label="Search operators" placeholder="Search operators or lineage…">
-<button id="fit">Fit graph</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">-</button>
+<div class="toolbar"><input id="search" aria-label="Search operators" placeholder="Find an operator or lineage…">
+<button id="fit">Fit route</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">-</button>
 <button id="edit">Edit layout</button><button id="download">Save JSON</button>
-<span class="hint" id="status">Plan snapshot · select a node for ports and config</span></div>
-<main><svg id="canvas" aria-label="Workflow graph"><g id="scene"></g></svg>
-<aside><h2 id="selection">Workflow</h2><p class="hint">Not executed · backend bindings unverified</p>
+<span class="hint" id="status">Plan snapshot · select a control point</span></div>
+<main><svg id="canvas" aria-label="Workflow route map"><defs><pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="#d8d2c5" stroke-opacity=".56"/></pattern></defs><rect width="100%" height="100%" fill="url(#grid)"/><g id="scene"></g></svg>
+<aside><h2 id="selection">Workflow</h2><p class="hint">Not executed · runtime bindings unverified</p>
 <section id="configEditor" hidden><label for="config">Configuration</label><textarea id="config" spellcheck="false"></textarea>
 <button id="applyConfig">Apply configuration</button><button id="resetConfig">Reset</button><p id="configError" role="alert"></p></section>
 <pre id="detail"></pre></aside></main>
@@ -62,7 +58,7 @@ document.getElementById('counts').textContent=doc.nodes.length+' nodes · '+doc.
 document.getElementById('detail').textContent=JSON.stringify({recipe_hash:doc.recipe_hash,capability_bindings:doc.capability_bindings,unmet_capabilities:doc.unmet_capabilities},null,2);
 const ns='http://www.w3.org/2000/svg', index=new Map(doc.nodes.map(n=>[n.id,n])), groups=new Map(), paths=[];let selected=null;
 function el(tag,attrs,parent,text){const e=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;parent.appendChild(e);return e;}
-const palette={generate:'#e8b777',verify:'#57dbc9',evaluate:'#57dbc9',export:'#a99aff',plan:'#7fa9ed'};
+const palette={generate:'#9848d8',verify:'#f1c84b',evaluate:'#7b8b7d',export:'#181b24',plan:'#6e7b70'};
 function edgePath(edge){const a=index.get(edge.source).position,b=index.get(edge.target).position;return `M ${a.x+256} ${a.y+48} C ${a.x+296} ${a.y+48}, ${b.x-40} ${b.y+48}, ${b.x} ${b.y+48}`;}
 for(const e of doc.edges){
 const path=el('path',{d:edgePath(e),class:'edge'},scene);
@@ -74,10 +70,10 @@ connections:doc.edges.filter(e=>e.target===n.id),outputs:n.outputs,config:n.conf
 backend_hints:Object.fromEntries(n.needs.map(c=>[c,doc.capability_bindings[c]??'unbound'])),
 retry:n.retry,max_parallelism:n.max_parallelism,timeout_s:n.timeout_s,lineage:n.lineage,selects:n.selects},null,2);}
 for(const n of doc.nodes){const g=el('g',{transform:`translate(${n.position.x},${n.position.y})`,class:'node',tabindex:'0',role:'button','aria-label':n.operator},scene);
-el('rect',{width:256,height:96,rx:8,fill:'#152338',stroke:palette[n.stage]??'#6584b0','stroke-width':1.5},g);
-el('text',{x:16,y:25,fill:palette[n.stage]??'#98abc8','font-size':11},g,n.stage.toUpperCase());
-el('text',{x:16,y:50,fill:'#e3ebf7','font-size':14},g,n.operator.length>29?n.operator.slice(0,28)+'…':n.operator);
-el('text',{x:16,y:75,fill:'#98abc8','font-size':11},g,n.id.length>32?n.id.slice(0,31)+'…':n.id);
+el('rect',{width:256,height:96,rx:2,fill:'#fffdf7',stroke:palette[n.stage]??'#9aa69a','stroke-width':2},g);
+el('text',{x:16,y:25,fill:palette[n.stage]??'#6e7b70','font-size':11},g,n.stage.toUpperCase());
+el('text',{x:16,y:50,fill:'#181b24','font-size':14},g,n.operator.length>29?n.operator.slice(0,28)+'…':n.operator);
+el('text',{x:16,y:75,fill:'#6e7b70','font-size':11},g,n.id.length>32?n.id.slice(0,31)+'…':n.id);
 el('title',{},g,n.description||n.operator);g.addEventListener('click',()=>select(n));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n);}});groups.set(n.id,g);
 let nodeDrag=null;
 g.addEventListener('pointerdown',e=>{if(!document.body.classList.contains('editing')||e.button!==0)return;e.stopPropagation();g.setPointerCapture(e.pointerId);g.dataset.dragging='1';nodeDrag={x:e.clientX,y:e.clientY,px:n.position.x,py:n.position.y};});
