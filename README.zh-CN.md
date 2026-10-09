@@ -301,7 +301,7 @@ MVP 已端到端实现图片流水线：ingest、detection、segmentation、scen
 这不是 AI 模型生成，生产数据仍需标签投影、时序验证与质量门禁。示例为
 [`examples/video/demo-spec.json`](examples/video/demo-spec.json)。
 
-AI 视频接入已复用 runtime 能力绑定，提供 Runway 与 fal 异步任务适配器（提交、查询、取消）。
+AI 视频接入已复用 runtime 能力绑定，提供 Runway、fal 与 Bifrost OpenAI 兼容网关异步任务适配器（提交、查询、取消）。
 画布图结构编辑使用类型化原子事务，直接执行的宿主接口复用原 DAG 和调度器。
 模型配置、授权边界和接入示例见[接口说明](docs/zh/video-integrations.md)；提供了
 [`runtime-ai.yaml`](examples/video/runtime-ai.yaml) 的 Runway、Kling、Wan、Veo 配置示例。

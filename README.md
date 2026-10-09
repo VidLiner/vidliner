@@ -327,7 +327,8 @@ The offline canvas supports node layout and JSON configuration drafts. Local MP4
 rendered with FFmpeg through `video generate` or `video render`; see the
 [video augmentation contract](docs/design/video-augmentation.md) for supported operations and a sample spec.
 
-AI video integration reuses runtime capability bindings with Runway and fal task adapters.
+AI video integration reuses runtime capability bindings with Runway, fal, and the Bifrost
+OpenAI-compatible video gateway task adapters.
 Typed structural-edit transactions and a canvas execution-host interface reuse the existing DAG and
 scheduler. See [integration contracts](docs/video-integrations.md) for model configuration, authorization,
 and the distinction between a completed generation task and verified training data.
